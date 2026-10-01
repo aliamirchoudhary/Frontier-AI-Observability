@@ -1,0 +1,118 @@
+{
+  "dataset": "lmarena-ai/leaderboard-dataset",
+  "revision": "47c3ea6a706f1cde7bc422ba27f8e935cc4d48da",
+  "retrieved_at_utc": "2026-10-01T18:17:35.016158+00:00",
+  "method": "Historical replay of real source publications; both acquired during this session, not two live collection days.",
+  "files": [
+    {
+      "path": "data/samples/full/arena_text_style_control.parquet",
+      "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/47c3ea6a706f1cde7bc422ba27f8e935cc4d48da/text_style_control/full-00000-of-00001.parquet",
+      "source_format": "parquet",
+      "subset": "text_style_control",
+      "load_type": "full",
+      "source_date_min": "2026-09-11",
+      "source_date_max": "2026-09-25",
+      "rows": 1212,
+      "bytes": 70891,
+      "sha256": "86e0af530e81071b17a6ee18c12bcee29fec74a1130c27575be79c072e4d5a49",
+      "selection": "Unmodified source rows selected by publication date; representative subset of historical full load."
+    },
+    {
+      "path": "data/samples/incremental/arena_text_style_control.parquet",
+      "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/47c3ea6a706f1cde7bc422ba27f8e935cc4d48da/text_style_control/full-00000-of-00001.parquet",
+      "source_format": "parquet",
+      "subset": "text_style_control",
+      "load_type": "incremental",
+      "source_date_min": "2026-09-30",
+      "source_date_max": "2026-09-30",
+      "rows": 10855,
+      "bytes": 519508,
+      "sha256": "1085e74ff8250eaaf405c299ff9db412c5212ec5a302407f0464b2e2f67e5c40",
+      "selection": "All rows at latest published date extracted from pinned historical source file."
+    },
+    {
+      "path": "data/samples/full/arena_webdev.parquet",
+      "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/47c3ea6a706f1cde7bc422ba27f8e935cc4d48da/webdev/full-00000-of-00001.parquet",
+      "source_format": "parquet",
+      "subset": "webdev",
+      "load_type": "full",
+      "source_date_min": "2026-09-24",
+      "source_date_max": "2026-09-29",
+      "rows": 402,
+      "bytes": 28550,
+      "sha256": "8e7c32f6bce2e1bc3c5449235a6eca10ac7d140a591820c16ec7102429a7705c",
+      "selection": "Unmodified source rows selected by publication date; representative subset of historical full load."
+    },
+    {
+      "path": "data/samples/incremental/arena_webdev.parquet",
+      "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/47c3ea6a706f1cde7bc422ba27f8e935cc4d48da/webdev/full-00000-of-00001.parquet",
+      "source_format": "parquet",
+      "subset": "webdev",
+      "load_type": "incremental",
+      "source_date_min": "2026-09-30",
+      "source_date_max": "2026-09-30",
+      "rows": 530,
+      "bytes": 29302,
+      "sha256": "5a92f1327cb9aad2cf64d59ce787e4677bef486437b11381605d2ec5f7588b45",
+      "selection": "All rows at latest published date extracted from pinned historical source file."
+    },
+    {
+      "path": "data/samples/full/arena_agent.parquet",
+      "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/47c3ea6a706f1cde7bc422ba27f8e935cc4d48da/agent/full-00000-of-00001.parquet",
+      "source_format": "parquet",
+      "subset": "agent",
+      "load_type": "full",
+      "source_date_min": "2026-09-25",
+      "source_date_max": "2026-09-28",
+      "rows": 135,
+      "bytes": 15424,
+      "sha256": "26b721b77db207bee3a43d40006764e045943c2ccd3b79bbd44420b5424f1fba",
+      "selection": "Unmodified source rows selected by publication date; representative subset of historical full load."
+    },
+    {
+      "path": "data/samples/incremental/arena_agent.parquet",
+      "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/47c3ea6a706f1cde7bc422ba27f8e935cc4d48da/agent/full-00000-of-00001.parquet",
+      "source_format": "parquet",
+      "subset": "agent",
+      "load_type": "incremental",
+      "source_date_min": "2026-09-30",
+      "source_date_max": "2026-09-30",
+      "rows": 46,
+      "bytes": 11547,
+      "sha256": "5ade4ed40e151757ba2996ecef061dc0cf1a10af9518ce20524343fab819939f",
+      "selection": "All rows at latest published date extracted from pinned historical source file."
+    }
+  ],
+  "supplementary_files": [
+    {
+      "path": "data/samples/full/benchlm.json",
+      "source_id": "benchlm_models",
+      "source_url": "https://benchlm.ai/data/models.json",
+      "source_build": "2026-10-01T17:31:32.160Z",
+      "items": 5,
+      "bytes": 53926,
+      "sha256": "d733c7a383a0d92e7844cf3638d8e621357060953a9f6f595c23179e53f2066a",
+      "selection": "Five unchanged items, with source notices retained; sample_note added."
+    },
+    {
+      "path": "data/samples/full/benchlm_benchmarks.json",
+      "source_id": "benchlm_benchmarks",
+      "source_url": "https://benchlm.ai/data/benchmarks.json",
+      "source_build": "2026-10-01T17:31:32.160Z",
+      "items": 5,
+      "bytes": 20841,
+      "sha256": "4a8fc6f3a9a5b911d231fe31883a94abf63137c552f7c511d46678122f2231ff",
+      "selection": "Five unchanged items, with source notices retained; sample_note added."
+    },
+    {
+      "path": "data/samples/full/benchlm_pricing.json",
+      "source_id": "benchlm_pricing",
+      "source_url": "https://benchlm.ai/data/pricing.json",
+      "source_build": "2026-10-01T17:31:32.160Z",
+      "items": 5,
+      "bytes": 4773,
+      "sha256": "6bff73433c87e09d7120f20095fe8108cd2b074fd67456e8cc3095d0a803d893",
+      "selection": "Five unchanged items, with source notices retained; sample_note added."
+    }
+  ]
+}
