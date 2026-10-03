@@ -1,0 +1,1 @@
+A public-data AI observatory built around Apache Spark and a Medallion lakehouse. It brings together model evaluations, pricing, releases and coding-agent coordination evidence for reproducible capability trends, workload cost comparisons and source-linked dashboards.
