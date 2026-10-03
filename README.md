@@ -15,7 +15,7 @@
 <a href="https://www.python.org/"><img src="https://img.shields.io/badge/PySpark-3776AB?style=flat-square&logo=python&logoColor=white" alt="PySpark" /></a>
 <a href="https://delta.io/"><img src="https://img.shields.io/badge/Delta%20Lake-00ADD4?style=flat-square" alt="Delta Lake" /></a>
 <a href="https://www.databricks.com/"><img src="https://img.shields.io/badge/Databricks-FF3621?style=flat-square&logo=databricks&logoColor=white" alt="Databricks" /></a>
-<img src="https://img.shields.io/badge/Formats-Parquet%20%C2%B7%20JSON%20%C2%B7%20CSV-72766B?style=flat-square" alt="Formats: Parquet, JSON, CSV" />
+<img src="https://img.shields.io/badge/Formats-Parquet%20%C2%B7%20JSON%20%C2%B7%20CSV%20%C2%B7%20tar.gz-72766B?style=flat-square" alt="Formats: Parquet, JSON, CSV, tar.gz" />
 
 <br /><br />
 
@@ -43,16 +43,16 @@ The proposed pipeline brings public data into an Apache Spark lakehouse. Bronze 
 
 ## Project status
 
-**Foundation stage.** The source pilot, representative historical and subsequent dated samples, proposal, and schema design examples are prepared. The cloud pipeline, scheduled ingestion, Gold tables, and dashboard remain planned implementation work. Technology badges describe the intended stack.
+**Foundation stage.** Source inventories, verified public samples, the Phase 1 proposal, and the proposed model are available. Cloud Spark transformations, scheduled collection, Gold tables and dashboards remain planned. Technology badges describe the intended stack.
 
-| Initial source pilot | Measured result |
+| Source inventory and samples | Measured result |
 | :--- | ---: |
-| Selected Arena historical observations | 1,042,667 rows |
-| Combined selected source downloads | 62.48 MB |
-| Subsequent dated Arena sample batch | 11,431 rows |
-| Source review date | 1 October 2026 |
+| Selected Arena historical observations | 2,200,800 rows |
+| Core original full-load payloads | 216.37 MB |
+| Initial acquisition including supplemental exports | Approximately 227 MB |
+| Native subsequent Arena publication | 21,896 rows · 1.22 MB |
 
-Measurements describe the initial downloaded files, not live repository statistics. Sizes use decimal MB. The full-load samples are representative extracts; the complete baseline is larger.
+Sizes use decimal MB and refer to original source formats. CooperBench archives are counted compressed. Representative full-load samples do not measure the complete baseline. The native incremental files are unchanged source Parquet, with chronology and checksums recorded in the [manifest](data/samples/manifest.json).
 
 ## Questions worth answering
 
@@ -61,6 +61,7 @@ Measurements describe the initial downloaded files, not live repository statisti
 - How sensitive is a shortlist to missing prices, uncertain model identity, or a different token workload?
 - Which models lack enough evidence for a defensible comparison?
 - How do release cadence and observed price changes affect the set of qualifying alternatives?
+- When does coding-agent coordination improve matched task outcomes, and what execution-time overhead accompanies it?
 
 ## Lakehouse design
 
@@ -69,6 +70,7 @@ flowchart TD
     A["Arena evaluation histories"] --> L["Source files and provenance manifests"]
     B["BenchLM catalogs and prices"] --> L
     C["Epoch release metadata"] --> L
+    H["CooperBench task outcomes and traces"] --> L
     L --> D["Bronze — source records"]
     D --> E["Silver — validated observations"]
     E --> F["Gold — analytical facts and dimensions"]
@@ -83,7 +85,7 @@ flowchart TD
 | Layer | Proposed contents | Main responsibility |
 | :--- | :--- | :--- |
 | **Bronze** | Source payloads, revisions, checksums, ingestion timestamps | Preserve the original observation and its lineage |
-| **Silver** | Model identities, evaluation observations, benchmark definitions, pricing and release records | Enforce types, validate keys, review aliases, and separate incompatible metrics |
+| **Silver** | Model identities, evaluation observations, benchmark definitions, pricing, release and study-task records | Enforce types, validate keys, review aliases, and separate incompatible metrics |
 | **Gold** | Evaluation and price facts, workload scenarios, frontier histories, release summaries, coverage metrics | Serve reproducible analysis and dashboard queries |
 | **Operations** | File inventory, execution logs, checkpoints, rejected records | Explain what ran, what changed, and what requires review |
 
@@ -108,7 +110,8 @@ These are implementation targets. Cloud execution evidence will be added as the 
 
 | Source | Initial load | Incremental approach | Reuse conditions |
 | :--- | :--- | :--- | :--- |
-| [Arena leaderboard dataset](https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset) | Selected full text, web development, and agent histories | Daily revision checks and latest publications; weekly historical reconciliation | Dataset labeled **CC BY 4.0**; attribution required |
+| [Arena leaderboard dataset](https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset) | Standard and style-controlled text, web development, and agent histories | Daily revision checks and latest publications; weekly historical reconciliation | Dataset labeled **CC BY 4.0**; attribution required |
+| [CooperBench study archives](https://huggingface.co/datasets/CooperBench/team-trajectories) | Four full settings: solo, shared Git, full team, and team without protocol verbs | Weekly revision checks for corrections or compatible new runs; no guaranteed daily additions | Dataset card **Apache 2.0**; inherited notices may apply; unreviewed traces stay restricted |
 | [BenchLM exports](https://benchlm.ai/data) | Model, benchmark, and pricing JSON catalogs | Compare complete snapshots and source build timestamps | **CC BY-NC 4.0**; commercial reuse requires an appropriate license or replacement source |
 | [Epoch AI models](https://epoch.ai/data/ai-models) | Historical model metadata CSV | Daily snapshot comparison | Attribution required; author and contact fields need privacy review |
 
@@ -121,8 +124,14 @@ These are implementation targets. Cloud execution evidence will be added as the 
 
 - Dataset metadata: https://huggingface.co/api/datasets/lmarena-ai/leaderboard-dataset
 - Resolve files against an immutable revision returned by the API.
-- Selected subsets: `text_style_control`, `webdev`, and `agent`.
+- Selected subsets: `text`, `text_style_control`, `webdev`, and `agent`.
 - Splits: `full` for history and `latest` for current publications.
+
+**CooperBench**
+
+- https://huggingface.co/datasets/CooperBench/team-trajectories
+- Original `cmp-full-solo.tar.gz`, `cmp-full-coopgit.tar.gz`, `cmp-full-team.tar.gz`, and `cmp-full-team-noproto.tar.gz`.
+- [Pinned URLs and original checksums](config/source-registry.json).
 
 **BenchLM**
 
@@ -139,17 +148,19 @@ These are implementation targets. Cloud execution evidence will be added as the 
 
 Price history starts with collected observations where a source does not supply historical tariffs. A daily polling schedule does not imply daily changes. Missing records will only be marked unavailable after complete, successful snapshots confirm their absence; earlier observations remain available.
 
+CooperBench supplies a bounded study of outcomes and duration. Its source deployment alias remains separate from public pricing SKUs. Missing evaluations are disclosed, and zero-filled cost or token fields remain unmeasured. Standard and style-controlled Arena text are related evidence, not independent experiments.
+
 **Optional extensions:** SWE-bench experiment artifacts for task-level coding analysis and targeted Hugging Face metadata for identity enrichment, subject to artifact-specific access and license checks. The archived Open LLM Leaderboard is historical context only. Artificial Analysis and OpenRouter are outside the required public sample portfolio because current access conditions do not establish the redistribution rights needed here.
 
 ## Dashboard direction
 
 <table>
-<tr><td><strong>01 · Capability and estimated cost</strong><br /><br />A scatterplot of a compatible evaluation score against estimated workload cost, highlighting non-dominated alternatives.</td></tr>
-<tr><td><strong>02 · Published frontier over time</strong><br /><br />A timeline of leading results within a comparable series, with methodology changes and observation coverage visible.</td></tr>
-<tr><td><strong>03 · Evidence coverage</strong><br /><br />A matrix of usable results, reviewed identities, provenance, and matched prices, supported by freshness and completeness metrics.</td></tr>
+<tr><td><strong>01 · Capability and estimated cost</strong><br /><br />A scatterplot of a comparable evaluation score against workload token cost, highlighting eligible non-dominated alternatives.</td></tr>
+<tr><td><strong>02 · Coding-agent coordination</strong><br /><br />Paired success-rate bars and duration distributions across four study settings, with evaluated counts, missing evaluations and merge outcomes visible.</td></tr>
+<tr><td><strong>03 · Published capability over time</strong><br /><br />Leading published results within a comparable series, with methodology changes, style sensitivity and evidence coverage visible.</td></tr>
 </table>
 
-The intended BI surface is Databricks SQL, with a local dashboard over exported Gold tables as a free fallback. Cost scenarios will expose request volume, input tokens, billable output tokens, and tariffs. Unknown prices remain missing; self-hosted zero-price entries do not become free hosted API offers.
+Databricks SQL is the intended BI surface, with a local dashboard over exported Gold tables as the free fallback. Token prices support workload scenarios, not measured agent-run bills. Unknown prices and deployment matches remain missing. See the [proposed architecture](docs/architecture.md).
 
 ## Research direction
 
@@ -158,6 +169,8 @@ The intended BI surface is Databricks SQL, with a local dashboard over exported 
 The proposed study compares headline rankings with protocol-compatible cohorts and scenario-specific shortlists. It will measure ranking agreement, shortlist overlap, exclusions caused by missing evidence, and sensitivity to token assumptions or uncertain identity mappings.
 
 Where task-level outcomes are available, resampling can estimate uncertainty. Aggregate confidence intervals alone do not provide task-level data. Published scores describe a selected evidence population, so results must account for coverage and selection bias.
+
+The CooperBench study adds a matched-task analysis of coordination outcomes and duration across four settings. Missing evaluations and the specific deployment/harness limit generalization.
 
 Potential research outputs include a documented methodology, reproducible comparison notebooks, dated evidence exports, and analyses of recommendation stability. No research novelty or empirical result is claimed before the study is run.
 
@@ -174,52 +187,37 @@ The longer-term goal is a model-selection workspace for small AI teams. Public e
 
 These are future goals, not available features. Commercial use would require replacing or licensing restricted source data and using infrastructure that permits commercial activity.
 
-## Proposed repository layout
+## Repository layout
 
-The layout below is the target organization. Folders for notebooks, dashboards, experiments, and workflows will appear as those components are implemented.
-
-| Path | Purpose |
+| Path | Contents |
 | :--- | :--- |
-| `README.md` · `LICENSE` | Project overview and MIT license for original code |
-| `assets/observatory-banner.svg` | Repository banner |
-| `proposals/Phase-1-Proposal.docx` | Formal scope, source selection, samples, models, BI plan, and FinOps proposal |
-| `config/` | Source registry, approved contracts, and reviewed model aliases |
-| `data/samples/full/` | Inspected representative historical raw samples |
-| `data/samples/incremental/` | Subsequent dated raw samples |
-| `data/samples/manifest.json` | Source revisions, extraction details, counts, and checksums |
-| `src/` | Collection, contracts, source adapters, and transformation modules |
-| `notebooks/bronze/` · `notebooks/silver/` · `notebooks/gold/` | Planned Spark layer entry points |
-| `sql/` | Merge examples and planned analytical queries |
-| `dashboards/` | Planned dashboard definitions and screenshots |
-| `research/` | Planned experiment notebooks, methods, and reproducible result summaries |
-| `tests/` | Sample checks and planned pipeline validation |
-| `docs/` | Data dictionary, execution guide, architecture, and source decisions |
-| `.github/workflows/` | Planned automated repository checks |
-| `THIRD_PARTY_NOTICES.md` | Data attribution and third-party license conditions |
+| `proposals/Phase-1-Proposal.docx` | Formal Phase 1 proposal |
+| `config/source-registry.json` | Exact source URLs, source grains, licences and original payload inventory |
+| `data/samples/full/arena/` | Four representative historical Parquet subsets |
+| `data/samples/full/cooperbench/` | Four inspected native result JSON members |
+| `data/samples/full/benchlm/` | Attributed catalog and pricing subsets |
+| `data/samples/incremental/arena/` | Three unchanged native subsequent publication files |
+| `data/samples/manifest.json` | Source sizes, revisions, selections and checksums |
+| `tools/verify_samples.py` | Local sample and chronology verification |
+| `docs/` | Architecture, source guide, Free Edition plan and replacement instructions |
+| `assets/observatory-banner.svg` | Repository artwork |
+| `.gitignore` · `requirements.txt` | Local exclusions and sample-verifier dependency |
+| `LICENSE` · `THIRD_PARTY_NOTICES.md` | Code licence and upstream data notices |
 
-Raw archives, credentials, restricted metadata, temporary exports, and workspace artifacts remain outside Git. The proposal link assumes the document is stored as `proposals/Phase-1-Proposal.docx`.
+Future `src/`, `notebooks/`, `sql/`, `dashboards/`, `research/` and workflow folders will be added with their implementations. They are not represented as working components in this package.
 
-## Explore the foundation
+## Verify the foundation
 
-The following commands apply when the foundation files from the starter package are present. They verify samples and collect data; they do not deploy the cloud pipeline.
+From the repository root:
 
 ```bash
-# Install the dependency used by the sample verifier.
-python -m pip install pyarrow
-
-# Validate the supplied source samples and checksums.
-python tests/verify_samples.py
-
-# Collect the full text history and supporting catalogs.
-python src/collect_sources.py --output data/raw \
-  --arena-subset text_style_control --arena-split full
-
-# Collect the latest text publication and supporting catalogs.
-python src/collect_sources.py --output data/raw \
-  --arena-subset text_style_control --arena-split latest
+python -m pip install -r requirements.txt
+python tools/verify_samples.py
 ```
 
-The collector supports `webdev` and `agent` through `--arena-subset`. Downloads may include personal metadata from Epoch and must be reviewed before sharing. Databricks access and scheduling will be configured separately after source connectivity is verified.
+The verifier checks public sample sizes and hashes, Parquet row counts, JSON validity and incremental publication order. It also validates the recorded full-source inventory total. It does not download full histories or execute a cloud pipeline.
+
+[Public sample guide](data/samples/README.md) · [Source registry](config/source-registry.json) · [Free Edition plan](docs/databricks-free-edition.md)
 
 ## Roadmap
 
@@ -227,6 +225,8 @@ The collector supports `webdev` and `agent` through `--arena-subset`. Downloads 
 - [x] Acquire and measure the initial source files.
 - [x] Prepare representative historical and subsequent dated samples.
 - [x] Document the proposed lakehouse and dashboard scope.
+- [x] Add local sample verification and source attribution.
+- [ ] Validate source access and the sample workflow in Databricks Free Edition.
 - [ ] Implement Bronze and Silver in the cloud workspace.
 - [ ] Demonstrate replay safety, backfills, drift handling, and audit accuracy.
 - [ ] Build Gold tables and the three dashboard views.
@@ -240,7 +240,7 @@ The collector supports `webdev` and `agent` through `--arena-subset`. Downloads 
 <img src="https://img.shields.io/badge/GPU-Not%20required-72766B?style=flat-square" alt="GPU not required" />
 <img src="https://img.shields.io/badge/Collection-Daily%20polling%20planned-9C6847?style=flat-square" alt="Daily polling planned" />
 
-The primary plan uses Databricks Free Edition and existing hardware. Development begins with small samples, then processes the full baseline once. Unchanged downloads are skipped, retained bytes are measured, and optional refreshes are deferred if quotas are exhausted. A 2 GB internal storage target is a planning cap, not a provider allowance.
+The primary plan uses Databricks Free Edition and existing hardware. Development begins with small samples, then processes the full baseline once. Unchanged downloads are skipped, retained bytes are measured, and optional refreshes are deferred if quotas are exhausted. A 3 GB working-storage target is an internal estimate, not a published Databricks allowance. The approximately 227 MB original acquisition is manageable in scale, but full cloud runtime and quota consumption remain unverified. Use sequential jobs, remove temporary extracts and validate restricted source connectivity before scheduling. See the [Free Edition plan](docs/databricks-free-edition.md).
 
 ## License and data notices
 

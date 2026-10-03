@@ -1,23 +1,31 @@
-# Data licences and attribution
+# Data attribution and licence notices
 
-Source checks: 1 October 2026. Repository code and documentation do not relicense third-party source data.
+The [MIT licence](LICENSE) covers original project code. It does not relicense third-party data.
 
 ## Arena
 
-Source: Arena / lmarena-ai, https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset
+Publisher: Arena / lmarena-ai. Source: https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset
 
-Dataset labelled Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/ . Supplied samples select unchanged source rows and reserialize them as Parquet; file bytes differ, source values do not. Credit Arena in charts and derived exports. Original pinned revision and date selection are in the manifest. Model licence labels are distinct from the dataset licence.
+The dataset is labelled [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Credit Arena in charts and derived exports. Full-load samples select source rows and reserialize them as Parquet; source values and schemas are preserved, while bytes differ. Incremental Parquet samples are unchanged complete native source files. Revisions, selections and checksums are in the sample manifest. Model licence labels are separate from the dataset licence.
+
+## CooperBench
+
+Publisher: CooperBench. Source: https://huggingface.co/datasets/CooperBench/team-trajectories
+
+The original coordination-study dataset card specifies [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0). Public samples are unchanged result JSON members from the four complete study settings. Retain source attribution and any applicable notices. Code, patches and text inherited from benchmark repositories may retain additional rights and notices. Complete archives, raw prompts and unreviewed traces are not redistributed in this repository.
 
 ## BenchLM
 
-Source: BenchLM.ai, https://benchlm.ai/data, retrieved 1 October 2026.
+Publisher: BenchLM.ai. Source: https://benchlm.ai/data
 
-Dataset licence CC BY-NC 4.0: https://creativecommons.org/licenses/by-nc/4.0/ . Supplied JSON samples select five unchanged items and preserve source-level attribution and upstream notices; original counts describe the full export, not the sample. Academic non-commercial analysis only. Commercial reuse requires a BenchLM licence or replacement source. Benchmark material retains its original publishers' rights; do not copy prompt datasets or infer an upstream licence from an aggregated score.
+Website JSON downloads are [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). The supplied JSON samples select representative items and retain source-level attribution and notices. Noncommercial analysis and attributed outputs must preserve these terms. Commercial use requires a suitable licence or replacement source. Underlying publisher measurements retain their own rights.
 
 ## Epoch AI
 
-Source: Epoch AI, Data on AI models, https://epoch.ai/data/ai-models, accessed 1 October 2026. The website states Creative Commons Attribution reuse with source and author credit. The raw CSV is not included in public samples because author and free-text fields require PII handling. A checked-in static header contract and measured metadata are included.
+Publisher: Epoch AI. Source: https://epoch.ai/data/ai-models
 
-## Other sources
+Retain the attribution and applicable reuse conditions published with the source. The complete CSV is not included in public samples because author and free-text fields can contain personal information. Silver will omit those unnecessary fields; required source credits remain separate.
 
-Artificial Analysis Free API is not included because its published conditions specify internal use and no redistribution. No mirrors are used to bypass that restriction. OpenRouter payloads and SWE-bench artifacts are not included in this public starter. A MIT-labelled OpenEvals aggregate and archived leaderboard records are optional; obtain and retain applicable data notices before inclusion.
+## Excluded sources
+
+Artificial Analysis, OpenRouter payloads and SWE-bench submission traces are outside this public sample package. Adding a source requires review of its own access and redistribution terms.
