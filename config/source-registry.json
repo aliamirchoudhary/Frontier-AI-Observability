@@ -1,0 +1,181 @@
+{
+  "scope": "Phase 1 source registry; cloud transformations and scheduling remain planned",
+  "measurement_unit": "decimal MB, original payload as received",
+  "core_full_load_bytes": 216373763,
+  "demonstrated_incremental_bytes": 1219849,
+  "sources": [
+    {
+      "id": "arena",
+      "dataset_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset",
+      "metadata_url": "https://huggingface.co/api/datasets/lmarena-ai/leaderboard-dataset",
+      "format": "Parquet",
+      "subsets": [
+        "text",
+        "text_style_control",
+        "webdev",
+        "agent"
+      ],
+      "full_files": [
+        {
+          "name": "agent-full-00000-of-00001.parquet",
+          "source": "Arena",
+          "revision": "7d2d9009b2ba84383deb6f1b70e66f85b7cda4e7",
+          "original_bytes": 71464,
+          "rows": 1480,
+          "minimum_publication": "2026-06-04",
+          "maximum_publication": "2026-09-30",
+          "sha256": "2fdc9a42f3eadb583697613fee16783eb559b66a374616ed711227fe87ac54a4",
+          "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/7d2d9009b2ba84383deb6f1b70e66f85b7cda4e7/agent/full-00000-of-00001.parquet"
+        },
+        {
+          "name": "text-full-00000-of-00001.parquet",
+          "source": "Arena",
+          "revision": "7d2d9009b2ba84383deb6f1b70e66f85b7cda4e7",
+          "original_bytes": 57679352,
+          "rows": 1157599,
+          "minimum_publication": "2023-05-08",
+          "maximum_publication": "2026-09-30",
+          "sha256": "d02b43f6a738517df782735b37e0bec733d8f239ffc4b8a8c071785a63317b6c",
+          "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/7d2d9009b2ba84383deb6f1b70e66f85b7cda4e7/text/full-00000-of-00001.parquet"
+        },
+        {
+          "name": "text_style_control-full-00000-of-00001.parquet",
+          "source": "Arena",
+          "revision": "7d2d9009b2ba84383deb6f1b70e66f85b7cda4e7",
+          "original_bytes": 51094948,
+          "rows": 1016009,
+          "minimum_publication": "2024-08-28",
+          "maximum_publication": "2026-09-30",
+          "sha256": "37344e0790dd7399a2a0971475ea288606fba7ec4e0815ba37360f7c487604da",
+          "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/7d2d9009b2ba84383deb6f1b70e66f85b7cda4e7/text_style_control/full-00000-of-00001.parquet"
+        },
+        {
+          "name": "webdev-full-00000-of-00001.parquet",
+          "source": "Arena",
+          "revision": "7d2d9009b2ba84383deb6f1b70e66f85b7cda4e7",
+          "original_bytes": 1153614,
+          "rows": 25712,
+          "minimum_publication": "2025-11-12",
+          "maximum_publication": "2026-10-01",
+          "sha256": "06fbf611cddd128c7c75fb338caaa3eabb1eb5feb7db6328fa195056ee7225ab",
+          "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/7d2d9009b2ba84383deb6f1b70e66f85b7cda4e7/webdev/full-00000-of-00001.parquet"
+        }
+      ],
+      "incremental_sample_files": [
+        {
+          "path": "data/samples/incremental/arena/agent-latest-00000-of-00001.parquet",
+          "bytes": 8052,
+          "sha256": "f4162eee424c42bf2a1ef15a1da423a04ca140051cc6b8c4a534b8af3e116e3f",
+          "kind": "Unchanged complete native source file",
+          "revision": "46919c467f7f93d9609b668a283bcd20d87c28bc",
+          "rows": 50,
+          "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/46919c467f7f93d9609b668a283bcd20d87c28bc/agent/latest-00000-of-00001.parquet"
+        },
+        {
+          "path": "data/samples/incremental/arena/text-latest-00000-of-00001.parquet",
+          "bytes": 605667,
+          "sha256": "22d2dc485b30a5fcb4d6f29b63012fe382891dceacfd75c214631a14d5786151",
+          "kind": "Unchanged complete native source file",
+          "revision": "46919c467f7f93d9609b668a283bcd20d87c28bc",
+          "rows": 10923,
+          "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/46919c467f7f93d9609b668a283bcd20d87c28bc/text/latest-00000-of-00001.parquet"
+        },
+        {
+          "path": "data/samples/incremental/arena/text_style_control-latest-00000-of-00001.parquet",
+          "bytes": 606130,
+          "sha256": "11149e9035241fabaa1158873e43c398f98ed81ff747c24328ec87913e6091a5",
+          "kind": "Unchanged complete native source file",
+          "revision": "46919c467f7f93d9609b668a283bcd20d87c28bc",
+          "rows": 10923,
+          "source_url": "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset/resolve/46919c467f7f93d9609b668a283bcd20d87c28bc/text_style_control/latest-00000-of-00001.parquet"
+        }
+      ],
+      "pattern": "Daily revision checks; collect changed latest files; weekly history reconciliation and batch processing",
+      "analytical_role": "Capability trends, style sensitivity, web development and aggregate agent evidence",
+      "grain": "Source model configuration, category, publication observation, evaluation methodology",
+      "licence": "CC BY 4.0",
+      "privacy": "Inspected aggregate leaderboard samples have no participant identifiers or prompts"
+    },
+    {
+      "id": "cooperbench",
+      "dataset_url": "https://huggingface.co/datasets/CooperBench/team-trajectories",
+      "format": "Original tar.gz archives containing JSON, logs and patches",
+      "full_files": [
+        {
+          "name": "cmp-full-coopgit.tar.gz",
+          "source": "CooperBench/team-trajectories",
+          "revision": "dd371629174a226ecd251672af315699b77de05d",
+          "original_bytes": 30514821,
+          "sha256": "f687e96cafecddad2b5bc5eb303ea254943a37cd3d128f1998d1f1438904727a",
+          "source_url": "https://huggingface.co/datasets/CooperBench/team-trajectories/resolve/dd371629174a226ecd251672af315699b77de05d/cmp-full-coopgit.tar.gz"
+        },
+        {
+          "name": "cmp-full-solo.tar.gz",
+          "source": "CooperBench/team-trajectories",
+          "revision": "dd371629174a226ecd251672af315699b77de05d",
+          "original_bytes": 14531429,
+          "sha256": "b703e921d161aa30ead2eccaad23ffa7c45b4fe6b4f59e6a7e27ce537b331cc0",
+          "source_url": "https://huggingface.co/datasets/CooperBench/team-trajectories/resolve/dd371629174a226ecd251672af315699b77de05d/cmp-full-solo.tar.gz"
+        },
+        {
+          "name": "cmp-full-team-noproto.tar.gz",
+          "source": "CooperBench/team-trajectories",
+          "revision": "dd371629174a226ecd251672af315699b77de05d",
+          "original_bytes": 30695468,
+          "sha256": "8206656ef5a9989987ddfbcb9ac86e80c787382ff0b74b56004c311801ae36cd",
+          "source_url": "https://huggingface.co/datasets/CooperBench/team-trajectories/resolve/dd371629174a226ecd251672af315699b77de05d/cmp-full-team-noproto.tar.gz"
+        },
+        {
+          "name": "cmp-full-team.tar.gz",
+          "source": "CooperBench/team-trajectories",
+          "revision": "dd371629174a226ecd251672af315699b77de05d",
+          "original_bytes": 30632667,
+          "sha256": "fbed57e18cf3b14f3f10e3f3abeecd15c741b949ea9bdefe2464951ee325267f",
+          "source_url": "https://huggingface.co/datasets/CooperBench/team-trajectories/resolve/dd371629174a226ecd251672af315699b77de05d/cmp-full-team.tar.gz"
+        }
+      ],
+      "pattern": "Complete historical comparison; weekly checks for corrections or compatible new runs; no guaranteed periodic additions",
+      "analytical_role": "Matched task success, duration and merge outcomes across four coordination settings",
+      "grain": "Study run, repository task, feature pair; optional agent trace observation",
+      "source_model_alias": "gpt-5.5-hao",
+      "source_organization": "OpenAI via Azure deployment, as reported by publisher",
+      "licence": "Apache 2.0 dataset card; inherited notices may apply",
+      "privacy": "Potential PII in complete traces; only inspected result JSON members are public",
+      "limitations": [
+        "Zero-filled tokens and costs are unmeasured",
+        "Missing evaluations affect denominators",
+        "Alias is not an assumed public pricing SKU"
+      ]
+    },
+    {
+      "id": "benchlm",
+      "documentation_url": "https://benchlm.ai/data",
+      "full_urls": [
+        "https://benchlm.ai/data/models.json",
+        "https://benchlm.ai/data/benchmarks.json",
+        "https://benchlm.ai/data/pricing.json"
+      ],
+      "format": "JSON",
+      "pattern": "Initial complete snapshots, followed by content comparisons of changed snapshots",
+      "analytical_role": "Model identities, benchmark definitions and token price scenarios",
+      "grain": "Source model or benchmark ID, or tariff configuration and observation",
+      "licence": "CC BY-NC 4.0 website exports",
+      "privacy": "Attribution may name contributors; inspect before publishing",
+      "limitations": [
+        "Commercial reuse requires appropriate licence or replacement",
+        "Price history starts with collected observations"
+      ]
+    },
+    {
+      "id": "epoch",
+      "documentation_url": "https://epoch.ai/data/ai-models",
+      "full_url": "https://epoch.ai/data/all_ai_models.csv",
+      "format": "CSV",
+      "pattern": "Daily documented refresh; snapshot comparison for additions and changes",
+      "analytical_role": "Model release and development context",
+      "grain": "Source model metadata observation",
+      "licence": "Retain requested attribution and applicable publisher notices",
+      "privacy": "Author and contact fields require dropping from Silver; no raw CSV in public samples"
+    }
+  ]
+}

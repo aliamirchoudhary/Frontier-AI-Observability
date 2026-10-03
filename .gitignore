@@ -1,0 +1,29 @@
+# Source histories and restricted artifacts
+data/raw/
+data/bronze/
+data/silver/
+data/gold/
+data/quarantine/
+data/extracted/
+*.tar.gz
+*.zip
+
+# Credentials and local environments
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local workspace and temporary files
+.databricks/
+.ipynb_checkpoints/
+*.log
+*.tmp
+~$*.docx
+.DS_Store
