@@ -15,8 +15,8 @@
   ],
   "code_fingerprint": {
     "algorithm": "sha256",
-    "combined_value": "b3ccc5d653d61b370d6e1c9f07e27621a3104b0ddd0a05ece1fbe69e49051387",
-    "total_bytes": 25385,
+    "combined_value": "8e89f257dd823e5c4b8225fbafbbdd7c6cdfde216879d4423516f327557d3751",
+    "total_bytes": 25780,
     "covers": [
       {
         "path": ".github/workflows/smoke-workspace-readiness.yml",
@@ -25,11 +25,12 @@
       },
       {
         "path": "notebooks/workspace_readiness.py",
-        "sha256": "a163bf82cd484ac5c39ee6078a36434bd4eab6ed22d6827256d78fbe0e63a14c",
-        "bytes": 12694
+        "sha256": "d2609113c3d2e52a28c8d1a26abe1d630f18ac35c543df174a87ebdd073fd3cb",
+        "bytes": 13089
       }
     ],
-    "note": "combined_value is SHA-256 over the concatenation of the two covered files (canonical LF content, matching git blobs) in the listed order. Any byte change to a covered file invalidates this fingerprint. Re-fingerprinted 2026-10-09 after DEFECT-2 fix (workflow switched from legacy POST /api/2.0/files/import-file to current PUT/GET /api/2.0/fs/files + idempotent PUT /api/2.0/fs/directories per https://docs.databricks.com/api/files/v2/file; notebook bytes unchanged from a163bf82)."
+    "note": "combined_value is SHA-256 over the concatenation of the two covered files (canonical LF content, matching git blobs) in the listed order. Any byte change to a covered file invalidates this fingerprint. Re-fingerprinted 2026-10-09 after DEFECT-5 fix (merge target DeltaTable aliased as 't' to match merge condition prefix; human-fixed at runtime, ported from executed export; workflow unchanged 04bc176a). notebooks/workspace_readiness.ipynb is the Databricks export of the executed notebook (code cells byte-identical to this .py, verified by diff; contains run outputs as evidence) — not a separate fingerprint target.",
+    "superseded": ["9a8ddf73... (pre-DEFECT-1)", "be655643... (post-DEFECT-1)", "b3ccc5d6... (post-DEFECT-2)", "fedb98aa... (post-DEFECT-3)", "0262c910... (post-DEFECT-4; value recorded in run output code_sha)"]
   },
   "synthetic_fixture": {
     "description": "51-byte UTF-8 payload: 'frontier-ai-observatory task-02 synthetic smoke v1' plus trailing LF",
@@ -75,6 +76,41 @@
       },
       "volume_namespace_touched": "smoke/task-02/task-02-smoke-01/{events,artifacts} only (synthetic 51-byte artifact + per-run STARTED/READY JSON markers)"
     },
+    "notebook_run_evidence": {
+      "item": "T02-E05",
+      "executed_by": "human, in Databricks workspace, fresh session (agent has no workspace access)",
+      "recorded_at_utc": "2026-10-09T18:59:03.727270+00:00",
+      "runtime": {
+        "spark_version": "4.2.0",
+        "runtime_shape": "Spark Connect (pyspark/sql/connect in earlier stack trace); serverless-style conf tags not exposed",
+        "dbr_label": null,
+        "app_id": null,
+        "null_handling": "recorded as null via guarded conf reads, never guessed"
+      },
+      "code_binding": {
+        "widget_code_sha": "0262c910",
+        "widget_value_is": "fingerprint of the imported pre-DEFECT-5 .py (set by human per agent instruction)",
+        "executed_code": "imported pre-DEFECT-5 .py + human's one-line .alias(\"t\") fix applied in workspace before the successful run",
+        "executed_code_equals_repo_now": true,
+        "verification": "agent diffed executed export cell sources against fixed workspace_readiness.py: byte-identical (0 differences); therefore executed source is bound exactly by combined fingerprint 8e89f257...",
+        "caveat": "the literal code_sha string in the run output (0262c910) is one line behind the executed source; the authoritative binding is the export-vs-repo byte identity"
+      },
+      "artifact_evidence": "notebooks/workspace_readiness.ipynb = Databricks export of the executed notebook (28,559 bytes) including all cell outputs; privacy-scanned CLEAN (0 hits over metadata, sources and outputs)",
+      "outputs": {
+        "validated_params": "catalog=frontier-ai-observability bronze_schema=frontier-schema ops_schema=frontier-schema synthetic_id=task-02-smoke-01 volume_root_length=67 code_sha=0262c910",
+        "runtime": "{\"spark_version\": \"4.2.0\", \"dbr_label\": null, \"app_id\": null, \"recorded_at_utc\": \"2026-10-09T18:59:03.727270+00:00\", \"code_sha\": \"0262c910\"}",
+        "staged_readback": "51 bytes, sha256 a684c4422a38df806f861c6ae4fa589ca847e4ffdbe2b69109f10ae2dfcd06f8, match=true (Databricks-side readback of the Actions-staged artifact)",
+        "fixture": "count=3, schema struct<entity_id:string,metric_name:string,metric_value:bigint,code_sha:string,load_timestamp:timestamp> (explicit, no inference)",
+        "merge_history": "v0 CREATE TABLE, v1 MERGE (history(2) captured right after first merge)",
+        "merge_metrics": "v1 inserted=3 updated=0; v0 CREATE TABLE metrics null (as expected)",
+        "after_first_merge": "t02-1/2/3 values 1/2/3, load_timestamp 2026-10-09T00:00:00 preserved",
+        "exact_replay": "inserted=0 updated=0 timestamps_preserved=true row_count=3",
+        "module_import": "route=null, error=\"repo_path widget empty; attach route not provided\" (honest absence record; repo_path is optional)",
+        "readiness_summary": "{\"task\": \"task-02\", \"runtime\": {\"spark_version\": \"4.2.0\", \"dbr_label\": null, \"app_id\": null, \"recorded_at_utc\": \"2026-10-09T18:59:03.727270+00:00\", \"code_sha\": \"0262c910\"}, \"staged_readback_match\": true, \"fixture_rows\": 3, \"target_table_isolated\": true, \"merge_first_inserted\": 3, \"merge_first_updated\": 0, \"exact_replay_zero_change\": true, \"timestamps_preserved\": true, \"module_import_route_found\": false, \"code_sha_recorded\": true}"
+      },
+      "table_state_after_run": "frontier-ai-observability.frontier-schema.task02_smoke_fixture: 3 versions — v0 CREATE TABLE (from the run attempt that failed at MERGE before the alias fix), v1 first MERGE (3/0), v2 replay MERGE (0/0); isolated task02_ name only; synthetic rows only; no cleanup required",
+      "session_failure_history": "same-session attempt before the successful run failed at MERGE (target alias unresolved); CREATE TABLE from that attempt persisted as v0 — the successful run's output therefore shows no 'created empty' line and history(2)=[v1 MERGE, v0 CREATE TABLE]"
+    },
     "findings": [
       {
         "id": "DEFECT-1",
@@ -92,6 +128,27 @@
         "fix": "switched all transfers to current Files API per https://docs.databricks.com/api/files/v2/file: idempotent PUT /api/2.0/fs/directories for events+artifacts parents; uploads PUT /api/2.0/fs/files{path} raw-bytes octet-stream; downloads GET /api/2.0/fs/files{path}; artifact and both idempotency uploads send overwrite=false (overwrite=true never sent); per-run STARTED/READY unique paths keep default. Legacy import-file/files-download refs: 0. Guards 13/13 + endpoint guards pass; YAML parses; workflow sha 04bc176a..., notebook sha unchanged a163bf82..."
       },
       {
+        "id": "DEFECT-3",
+        "file": "notebooks/workspace_readiness.py",
+        "summary": "Table identifier built unquoted (catalog.schema.table); real workspace uses hyphenated names (frontier-ai-observability / frontier-schema) which Spark parses as arithmetic. Found while preparing the human notebook run; no cloud run had executed the notebook yet.",
+        "disposition": "fixed-2026-10-09-awaiting-commit",
+        "fix": "target_table and isolation check now use backticked identifiers `catalog`.`schema`.task02_smoke_fixture; ast.parse OK; structure 10/10; .ipynb regenerated from fixed .py (code cells byte-identical); notebook sha 5c2872bb..., combined fedb98aa..."
+      },
+      {
+        "id": "DEFECT-4",
+        "file": "notebooks/workspace_readiness.py",
+        "summary": "Empty-target creation used DataFrameWriter.mode('errorifexists').saveAsTable; Spark Connect runtime (user's workspace) rejects with UNSUPPORTED_OPERATION — only append/overwrite/ignore are mapped. Hit on the human's first real notebook execution, after DEFECT-3 backtick fix let the run reach CELL 5.",
+        "disposition": "fixed-2026-10-09-awaiting-commit",
+        "fix": "CELL 5 creation path replaced with plain SQL `CREATE TABLE <target> (...schema...) USING DELTA` (no IF NOT EXISTS — identical fail-if-exists semantics; works on classic and Connect). Explicit DDL types match fixture_schema: entity_id STRING NOT NULL, metric_name STRING NOT NULL, metric_value BIGINT, code_sha STRING, load_timestamp TIMESTAMP NOT NULL. ast.parse OK; structure 12/12; errorifexists only in comment; saveAsTable residual 0; .ipynb regenerated (code cells byte-identical); notebook sha 4352c5b4..., combined 0262c910..."
+      },
+      {
+        "id": "DEFECT-5",
+        "file": "notebooks/workspace_readiness.py",
+        "summary": "Merge condition prefix 't.' referenced a target alias that was never defined — DeltaTable.forName returned the table unaliased, so the merge would fail with an unresolved target reference. Static checks verified merge structure but not alias resolution; surfaced at first human execution in the workspace after the DEFECT-4 fix let the run reach CELL 5's MERGE.",
+        "disposition": "fixed-2026-10-09-awaiting-commit",
+        "fix": "human added .alias(\"t\") to the DeltaTable.forName line in the workspace; agent diffed the executed export against local .py (exactly one changed line) and ported it. Re-verify: export code cells byte-identical to .py (diff clean); ast.parse OK; structure 13/13 (new merge-target-aliased check); notebook sha d2609113..., combined 8e89f257..."
+      },
+      {
         "id": "RECORD-1",
         "summary": "checklist T02-E08 describes README edit as one status row; actual diff also rewrites heading/table. Scope unaffected (task-owned file).",
         "disposition": "noted-in-verification"
@@ -105,7 +162,8 @@
     "accepted_runtime_evidence": [
       "T02-E03 tiny upload: run 37970998426 success; STARTED http=204, artifact http=204, readback http=200, RUNNER_READBACK=PASS (51 B, a684c442...)",
       "T02-E04 idempotency: same-id/same-bytes http=409 persisted hash unchanged IDEMPOTENT_REUSE=PASS; same-id/different-bytes http=409 rejected, persisted hash unchanged IDEMPOTENT_REJECT=PASS; overwrite=true never sent",
-      "T02-E21 transfer evidence: STARTED+READY per-run JSON markers under smoke/task-02/task-02-smoke-01/events/ with run_id/attempt/code_sha; runner SHA bound to 329035d1"
+      "T02-E21 transfer evidence: STARTED+READY per-run JSON markers under smoke/task-02/task-02-smoke-01/events/ with run_id/attempt/code_sha; runner SHA bound to 329035d1",
+      "T02-E05 workspace run: human fresh-session run 2026-10-09T18:59:03Z, Spark 4.2.0 (Connect); READINESS_SUMMARY all-green (staged_readback_match, fixture_rows=3, target_table_isolated, merge 3/0, exact_replay 0/0, timestamps_preserved, code_sha_recorded); outputs archived in notebooks/workspace_readiness.ipynb export; executed source byte-identical to fingerprint 8e89f257"
     ]
   },
   "safe_evidence_references": [

@@ -121,6 +121,75 @@ Human instruction: "Fix workflow." → DEFECT-2 fixed after runtime discovery.
 
 **Volume state:** only synthetic objects under `smoke/task-02/task-02-smoke-01/` exist (51-byte artifact + per-run event markers); no real payloads; no cleanup required; no second dispatch performed.
 
+## Post-fix addendum 4 (2026-10-09 — notebook-run prep, no Git writes)
+
+**Trigger:** human first notebook run failed fast with the designed empty-widget guard (`Refusing to run with invented paths`). Guard behaviour is correct (no invented defaults shipped). While preparing corrected widget values, a second defect was found in the same notebook before any workspace execution reached cloud objects:
+
+**DEFECT-3:** `target_table = f"{catalog}.{bronze_schema}.task02_smoke_fixture"` (and the isolation check on the same string) used unquoted multipart identifiers. Real approved names contain hyphens (`frontier-ai-observability` / `frontier-schema`, confirmed by the successful Actions run env echo `IN_VOLUME_ROOT: /Volumes/frontier-ai-observability/frontier-schema/frontier_staging`). Spark parses unquoted `a-b` as arithmetic — the notebook would have failed at `spark.catalog.tableExists` / `saveAsTable` had it run that far.
+
+**Fix applied (notebook only; workflow untouched):**
+- `notebooks/workspace_readiness.py` L52 and L239: identifiers now backticked — `` `{catalog}`.`{bronze_schema}`.task02_smoke_fixture `` (both the build and the `target_table_isolated` prefix check).
+- `.ipynb` regenerated from the fixed `.py` (code cells byte-identical to source; conversion method unchanged).
+
+**Re-verification (local):** `ast.parse` SYNTAX OK · structure battery 10/10 · backtick forms present at L52/L239 and in `.ipynb` · privacy scan CLEAN · notebook sha `5c2872bb…` (12,702 B); workflow unchanged `04bc176a…`; **combined fingerprint `fedb98aa3ddd31c4f1a33e3167bd09a30d84e248fb432a2b56d6e5c775c734ea` (25,393 B)** written to `task-02-state.json`; `b3ccc5d6…` superseded.
+
+**State:** DEFECT-3 fixed locally, uncommitted (no Git authorization this turn). Workspace run remains pending human upload of the regenerated `.ipynb`.
+
+## Post-fix addendum 5 (2026-10-09 — Spark Connect runtime discovery, no Git writes)
+
+**Trigger:** human re-ran the regenerated `.ipynb` in the workspace with corrected widgets; run reached CELL 5 and failed:
+
+```
+[UNSUPPORTED_OPERATION] errorifexists is not supported.
+... pyspark/sql/connect/plan.py ...
+```
+
+**Root cause (DEFECT-4):** the user's workspace runtime is **Spark Connect** (`pyspark/sql/connect` in the stack trace). DataFrameWriter save-mode mapping on Connect accepts only `append` / `overwrite` / `ignore`; `errorifexists` raises `UNSUPPORTED_OPERATION`. The classic-mode call was a portability defect that static review and the Actions runner (CPU python, no Spark) could not surface — only a live Connect session exposes it.
+
+**Fix applied (notebook only; workflow untouched):**
+- CELL 5 empty-target creation now issues plain SQL:
+  `CREATE TABLE \`{catalog}\`.\`{schema}\`.task02_smoke_fixture (entity_id STRING NOT NULL, metric_name STRING NOT NULL, metric_value BIGINT, code_sha STRING, load_timestamp TIMESTAMP NOT NULL) USING DELTA`
+- No `IF NOT EXISTS` — fail-if-exists semantics identical to `errorifexists` (the preceding `tableExists` check remains; a concurrent-create race still fails loudly, never silently skips).
+- Explicit DDL types match the `fixture_schema` StructType exactly (no inference anywhere).
+- `.mode("errorifexists")` survives only inside an explanatory comment; `saveAsTable` residual 0.
+
+**Re-verification (local):** `ast.parse` SYNTAX OK · structure battery 12/12 (added Connect-safety checks) · `.ipynb` regenerated (code cells byte-identical to `.py`; conversion method unchanged) · privacy CLEAN · notebook sha `4352c5b4…` (13,078 B); workflow unchanged `04bc176a…`; **combined fingerprint `0262c910d56c7104656379e07fd4c1b21f8d55e473c34ee8a22d6f7bb93f7113` (25,769 B)** written to `task-02-state.json`; `fedb98aa…` superseded.
+
+**Runtime lessons recorded for the project:** the workspace runs Spark Connect (Python 3.12). Notebook code must avoid classic-only writer APIs; SQL paths and DataFrameReader/Writer subsets mapped on Connect are safe. DeltaTable MERGE (used later in CELL 5) is Connect-supported on DBR — remaining risk is low but the next human re-run is the arbiter.
+
+**State:** DEFECT-4 fixed locally, uncommitted (no Git authorization this turn). Human re-run of the newly regenerated `.ipynb` pending.
+
+## Post-fix addendum 6 (2026-10-09 — workspace run evidence + DEFECT-5, no Git writes)
+
+**Execution:** human ran the notebook fresh in the workspace. Intermediate failure (same session): after the DEFECT-4 `CREATE TABLE` fix reached the MERGE, the merge failed — condition `t.entity_id = s.entity_id` referenced target alias `t` that was never defined (`DeltaTable.forName` returned the table unaliased). Human fixed it in the workspace with `.alias("t")`; the attempt's `CREATE TABLE` persisted as table version 0. Re-run completed cleanly at **2026-10-09T18:59:03Z**.
+
+**DEFECT-5 (static-review miss):** merge target alias never bound; structural checks verified merge presence but not alias resolution. Fixed by human at runtime; agent ported the exact line from the executed export.
+
+**Evidence intake procedure:** human exported the executed notebook to `notebooks/workspace_readiness.ipynb` (28,559 B, all outputs). Agent diffed its code cells against local `workspace_readiness.py`: **exactly one difference** (the `.alias("t")` line) → ported → re-diff: **byte-identical (0 differences)**. Therefore executed source ≡ repo source, bound by the new fingerprint below.
+
+**Run outputs (archived in the export; summarized):**
+
+| Signal | Value |
+|---|---|
+| Runtime | Spark **4.2.0**, Spark Connect; `dbr_label`/`app_id` null (guarded conf reads; serverless tags not exposed — null, not guessed) |
+| STAGED_READBACK | 51 bytes, sha256 `a684c442…`, **match=true** — Databricks-side readback of the Actions-staged artifact |
+| Fixture | count=3, explicit struct (bigint/timestamp correct), no inference |
+| Target table | isolated `task02_smoke_fixture`; history: v0 CREATE TABLE, v1 MERGE |
+| First merge | inserted=**3**, updated=**0** |
+| Exact replay | inserted=**0**, updated=**0**, timestamps_preserved=**true**, row_count=3 |
+| MODULE_IMPORT | route=null, `error="repo_path widget empty…"` — honest absence (repo_path optional, not supplied) |
+| READINESS_SUMMARY | all green; `code_sha=0262c910` recorded |
+
+**Code-sha binding (documented honestly):** the widget value `0262c910` is the pre-DEFECT-5 fingerprint (what the human imported); the executed source included the one-line alias fix, so the recorded string is one line behind the executed bytes. Authoritative binding: export-vs-repo diff = 0 → executed source ≡ post-port `.py`.
+
+**Re-verification (local):** `ast.parse` SYNTAX OK · structure battery **13/13** (added `merge-target-aliased`) · export privacy scan CLEAN (0 hits across metadata/sources/outputs) · notebook sha `d2609113…` (13,089 B) · workflow unchanged `04bc176a…` · **combined fingerprint `8e89f257dd823e5c4b8225fbafbbdd7c6cdfde216879d4423516f327557d3751` (25,780 B)** written to `task-02-state.json`; `0262c910…` superseded.
+
+**Item results:** #5 T02-E05 **PASS** · #10 T02-E10 **PASS** (cloud-by-human) · #12 T02-E12 re-verified PASS · #16 T02-E16 runtime match **PASS** · #21 T02-E21 both sides **PASS**.
+
+**Workspace residue:** one isolated Delta table (3 synthetic rows, 3 versions); no volume writes from the notebook; no cleanup required. Optional after commit: `DROP TABLE` + re-run with `code_sha=<commit SHA>` for single-SHA binding.
+
+**Still pending:** T02-E01 edition/billing record · T02-E06 job trigger · commit+push of the local fixes · instructor acceptance of the Actions route.
+
 ## Not claimed
 
 No cloud execution, no transfer success, no import-route result, no billing verification, no human peer approval, no instructor acceptance — this file is agent technical verification only.

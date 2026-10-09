@@ -49,7 +49,7 @@ import re as _re
 if not _re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
     raise ValueError("expected_sha256 must be a lowercase 64-char hex digest")
 
-target_table = f"{catalog}.{bronze_schema}.task02_smoke_fixture"
+target_table = f"`{catalog}`.`{bronze_schema}`.task02_smoke_fixture"
 artifact_path = f"{volume_root}/smoke/task-02/{synthetic_id}/artifacts/synthetic.txt"
 
 print(f"validated params: catalog={catalog} bronze_schema={bronze_schema} "
@@ -128,10 +128,18 @@ assert source_df.count() == 3
 from delta.tables import DeltaTable
 
 if not spark.catalog.tableExists(target_table):
-    source_df.limit(0).write.format("delta").mode("errorifexists").saveAsTable(target_table)
+    # DataFrameWriter.mode("errorifexists") is unmapped on Spark Connect runtimes
+    # (UNSUPPORTED_OPERATION); plain CREATE TABLE (no IF NOT EXISTS) has identical
+    # fail-if-exists semantics and runs on both classic and Connect.
+    spark.sql(
+        f"CREATE TABLE {target_table} ("
+        "entity_id STRING NOT NULL, metric_name STRING NOT NULL, metric_value BIGINT, "
+        "code_sha STRING, load_timestamp TIMESTAMP NOT NULL"
+        ") USING DELTA"
+    )
     print(f"created empty managed Delta target: {target_table}")
 
-target = DeltaTable.forName(spark, target_table)
+target = DeltaTable.forName(spark, target_table).alias("t")
 history_before = target.history(1)
 version_before = history_before.select("version").collect()[0][0]
 
@@ -236,7 +244,7 @@ summary = {
     "runtime": runtime,
     "staged_readback_match": readback["match"],
     "fixture_rows": 3,
-    "target_table_isolated": target_table.startswith(f"{catalog}.{bronze_schema}.task02_"),
+    "target_table_isolated": target_table.startswith(f"`{catalog}`.`{bronze_schema}`.task02_"),
     "merge_first_inserted": int(first_merge_metrics[0]["numTargetRowsInserted"] or 0),
     "merge_first_updated": int(first_merge_metrics[0]["numTargetRowsUpdated"] or 0),
     "exact_replay_zero_change": replay["inserted"] == 0 and replay["updated"] == 0,
