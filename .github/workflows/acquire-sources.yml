@@ -1,0 +1,46 @@
+# PLANNED SCAFFOLD — Phase 2 Task 01. NOT IMPLEMENTED, NEVER DISPATCHED.
+# This workflow performs no source request, no upload and no Databricks call.
+# It exists only to register the planned acquisition entry point with the
+# correct security posture. The placeholder job always fails so a manual
+# dispatch can never look like a successful acquisition.
+#
+# Build order (docs/phase-2/network-readiness.md):
+#   Task 02 — prove supported authentication and tiny upload/readback first
+#   Task 03 — then implement real acquisition endpoints and hashing
+# References: docs/phase-2/github-acquisition.md, docs/phase-2/network-readiness.md
+name: PLANNED - acquire sources
+
+on:
+  workflow_dispatch:
+    inputs:
+      sources:
+        description: "Registered source identifiers (planned; not consumed by this placeholder)"
+        required: false
+        default: ""
+      mode:
+        description: "Acquisition mode: full or incremental (planned; not consumed by this placeholder)"
+        required: false
+        default: "incremental"
+
+# Minimum permissions; no write-back, no token-derived Git identity.
+permissions:
+  contents: read
+
+# One collector per workspace staging namespace; never cancel mid-upload.
+concurrency:
+  group: acquire-sources-staging
+  cancel-in-progress: false
+
+jobs:
+  planned-notice:
+    name: PLANNED - acquisition not implemented
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail until Task 02 and Task 03 implement this workflow
+        run: |
+          echo "PLANNED: acquire-sources is a Task 01 repository-readiness scaffold."
+          echo "No source call, byte download, hash or Databricks upload is implemented."
+          echo "Task 02 (supported auth + tiny upload/readback) must pass before any raw transfer."
+          echo "Instructor acceptance of the Actions acquisition route remains pending."
+          exit 1

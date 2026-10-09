@@ -27,3 +27,10 @@ __pycache__/
 *.tmp
 ~$*.docx
 .DS_Store
+
+# Phase 2 runner/cloud working files (docs/phase-2/repository-integration.md)
+.databrickscfg
+raw/
+.tmp/
+.staging/
+working/
