@@ -2,7 +2,7 @@
 
 ## Original payloads
 
-The pinned inventory is reproducible evidence, not a promise that live exports retain the same size. Recheck registry URLs, source rights and checksums when implementing. Preserve source bytes in the restricted landing/archival part of Bronze. Delta record tables add metadata without altering those originals.
+The pinned inventory is reproducible evidence, not a promise that live exports retain the same size. Recheck registry URLs, source rights and checksums when implementing. Preserve source bytes in a separate restricted staging volume, before record-level Bronze tables. Delta record tables add metadata without altering those originals.
 
 | Source | Pinned reference and payloads | Role |
 | :--- | :--- | :--- |
@@ -25,7 +25,7 @@ The demonstrated subsequent publication uses Arena revision `46919c467f7f93d9609
 4. Record source URL, revision, source publication bounds, format, byte count, hash and local/cloud artifact identifier.
 5. Retain the original format. Parquet-to-CSV expansion is not an acquisition measure.
 6. Reuse identical content safely while recording a new acquisition attempt; do not count repeated content as new incremental data.
-7. Upload through a supported volume route if a publisher is inaccessible from serverless compute. Verify transferred hashes.
+7. Run source collection on GitHub Actions, upload original bytes through the verified Files API and validate persisted hashes inside Databricks. See [GitHub acquisition](github-acquisition.md). This is a pending instructor-acceptance deviation from the original Databricks-only source-call rule.
 
 Archive extraction must reject path traversal, absolute paths and links. Extract only required result/evaluation members into a restricted staging area, retain their archive-member names and hashes, and never execute bundled code. Confirm actual evaluation filenames and schemas from the full archives; result samples alone do not prove success.
 

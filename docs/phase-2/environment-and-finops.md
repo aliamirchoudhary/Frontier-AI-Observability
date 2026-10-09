@@ -1,32 +1,30 @@
 # Environment and FinOps
 
-Databricks Free Edition is the execution target. Keep local collection, contract inspection and small pure-Python tests lightweight; run Spark and Delta acceptance tests in the workspace.
+## Runtime locations
 
-## Setup decisions to verify
+PC: Git, editor and coding agent. Optional GitHub CLI supports separately authorized GitHub operations. No mandatory local venv, Python, Java or Spark. Full datasets are not stored on the PC.
 
-Record the observed catalog, writeable schemas, volume path, Python/Spark environment, module import route and available notebook/job parameter APIs. Confirm privileges before creating objects. Use actual identifiers, not assumed main/default catalog names. The original artifact location is a Unity Catalog volume; analytical tables use fully qualified managed Delta names.
+Actions: standard hosted runner, reviewed Python acquisition dependencies, bounded temporary files, original-payload collection and upload. Check actual repository runner/storage allowances and account settings before enabling schedules. No paid runner or storage upgrade.
 
-Use an HTTPS Git folder when supported in the account. If Git integration is blocked, use a supported notebook/module import route, then commit/export the exact executed source and record its Git commit. Do not share account credentials between operators. Cross-account workspace collaboration is a capability to verify, not an assumption; an execution-owner workspace can be reviewed through sanitized evidence and Git.
-
-## Free Edition constraints
-
-Free Edition uses serverless compute, limits usage under a fair-use policy and restricts outbound network destinations. Exceeding usage can suspend compute until quota resets. The official limits do not establish a universal fixed storage entitlement or guaranteed notebook-hours budget. A successful sample/full run is needed to measure this project's fit.
-
-Use Spark Connect-compatible DataFrame and SQL APIs. Avoid RDD APIs, DBFS mounts, classic-cluster configuration, Spark cache/persist APIs and dependency assumptions that fail on serverless. Use a batch workflow; continuous processing is unnecessary. Local source collection and volume upload are the fallback for blocked publisher access, with checksum verification.
+Databricks Free Edition: notebook environment, Spark DataFrame/SQL transformations, Unity Catalog staging volume, separate managed Bronze/Silver Delta histories, audit tables and acceptance queries. Verify actual catalog/schema/volume names and privileges. Free Edition has fair-use compute quotas and restricted egress; no guaranteed fixed storage or notebook-hour entitlement is assumed.
 
 ## Resource controls
 
-Start with representative samples in isolated tables. Upload/process one source group at a time. Keep native archives, extract only useful result/evaluation JSON members, and delete temporary extracts only after durable write verification. Original compressed source totals are not peak storage requirements: Bronze envelopes, Silver, staging and Delta versions add overhead.
+Prove tiny transfer first; run representative cloud samples before full source groups. Sequential jobs and one writer per target. Keep immutable source archives; extract only required safe result/evaluation members and clean disposable extracts after successful durable processing. Do not execute archive code.
 
-Record elapsed time, raw bytes, derived table sizes where measurable, rows and retained temporary artifacts. Avoid repeated baseline rebuilds, large driver collect/toPandas calls and unnecessary full counts in production. Acceptance counts are bounded, deliberate verification. Keep one writer per target and run acceptance steps sequentially.
+Reference compressed baseline is 216.37 MB plus supplements. Decoded CooperBench contents exceed 1 GB, so compressed bytes are not peak storage. The existing 3 GB working estimate is a planning target to measure and revise, not an entitlement or a guaranteed sufficient cap. Stage, Bronze, Silver, retained Delta versions and temporary extracts all count.
 
-Do not install replacement Spark/Delta runtimes into the managed workspace. Verify available runtime libraries first; add only necessary supported notebook dependencies. Do not run model inference, benchmark Docker stacks, paid jobs or quota-evading account workarounds. Pause when quotas are exhausted; resume via the audited replay workflow.
+Track runner elapsed time, transfer bytes, cloud execution time, table sizes where measurable and retained files. No repeated baseline collection on code pushes. No large driver collect/toPandas calls or continuous Spark streaming. Stop at exhausted quotas; resume audited units. Artifacts and Actions logs have retention and must not be used as the only recovery history.
 
-## Official references
+## Cloud setup
+
+Verify supported Git folder or notebook/module import route, fresh-session imports and executed source SHA. Shared workspace access is an observed capability; otherwise one execution owner runs cells and shares sanitized evidence for the other reviewer. Never share passwords or personal tokens. Managed Spark/Delta are not replaced through pip. Use supported minimal notebook dependencies with an explicit environment manifest.
+
+Use Spark Connect-compatible DataFrame/SQL APIs; no RDDs, DBFS mounts or unsupported cache/config APIs. All Spark tests run in Databricks. Runner tests validate acquisition code only and cannot establish cloud ingestion success.
+
+## References
 
 - https://docs.databricks.com/aws/en/getting-started/free-edition-limitations
 - https://docs.databricks.com/aws/en/compute/serverless/limitations
-- https://docs.databricks.com/aws/en/volumes/volume-files
-- https://docs.databricks.com/aws/en/repos/limits
-- https://docs.databricks.com/aws/en/tables/history
-- https://docs.databricks.com/aws/en/tables/operations/custom-metadata
+- https://docs.databricks.com/api/files/v2/file
+- https://docs.github.com/en/actions/how-tos/manage-workflow-runs/remove-workflow-artifacts

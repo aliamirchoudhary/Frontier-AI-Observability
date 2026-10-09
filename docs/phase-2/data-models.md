@@ -24,9 +24,11 @@ Every Bronze and Silver record includes the following columns. Carry original so
 
 A no-op replay does not change record_id, hash, batch_id or timestamps in Silver. Append-only Bronze provenance records retain their first load time. Operations logs record every attempt separately.
 
-## Bronze
+## Staging and Bronze are separate
 
-Original artifacts remain unchanged in the volume. The proposed Delta `bronze_source_records` table is a provenance envelope around each contracted source record, not a replacement for the original files.
+Staging holds native immutable files and batch manifests. It is not a Delta record table. Bronze holds contracted Delta record history derived from those files. Both histories are retained.
+
+Original artifacts remain unchanged in the separate staging volume. The proposed Delta `bronze_source_records` table is a provenance envelope around each contracted source record, not a replacement for the original files.
 
 | Additional column | Type | Null? | Meaning |
 | :--- | :--- | :---: | :--- |
@@ -70,3 +72,7 @@ Inspected samples show text rank and vote_count as DOUBLE; style-controlled text
 Read each physical contract correctly, then check finiteness, whole-number values and range before conversion to LongType. Keep agent score separate from Arena rating; no nonnegative constraint on a score whose protocol permits negative values. Validate interval ordering and metrics within source-specific units. Dates without a documented timezone are not silently labeled UTC; preserve raw values and resolve the source convention, or retain null analytical timestamps with a documented reason where permitted.
 
 Missing study evaluations remain missing. Do not infer success from a Submitted agent status or reconstruct unavailable evaluation files. Zero-filled study cost and token values become null/unmeasured in Silver while originals remain available in restricted Bronze.
+
+## Reconstruction timestamps
+
+A retry of existing Bronze rows preserves their timestamps. If Bronze data is actually lost and reconstructed, load_timestamp records the reconstruction processing time unless original table/metadata backups restore the previous value. Original batch identity, source revision, publication date and source_observed_at remain preserved from staging manifests. Runtime timestamps never participate in business keys or content hashes. Existing Silver rows must remain unchanged when reconstructed Bronze delivers the same business payload. Do not claim identical old Bronze timestamps can be recovered from raw files alone.

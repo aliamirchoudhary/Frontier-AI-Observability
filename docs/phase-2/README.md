@@ -9,6 +9,8 @@ Frontier AI Observatory will turn published evaluation and model metadata into t
 | [Scope and acceptance](scope-and-acceptance.md) | Required behavior and evidence |
 | [Source ingestion](source-ingestion.md) | Original payloads, acquisition and update semantics |
 | [Data models](data-models.md) | Proposed grains, columns, keys and timestamps |
+| [Staging and recovery](staging-and-recovery.md) | Two history stores and batch-aware reconstruction |
+| [Network readiness](network-readiness.md) | Databricks-only API calls and connectivity blockers |
 | [Pipeline behavior](pipeline-behavior.md) | Contracts, replay, backfills and quarantine |
 | [Audit and recovery](audit-and-recovery.md) | Logging, write metrics and interrupted runs |
 | [Environment and FinOps](environment-and-finops.md) | Serverless setup and resource controls |
@@ -19,3 +21,7 @@ Frontier AI Observatory will turn published evaluation and model metadata into t
 Repository: https://github.com/aliamirchoudhary/Frontier-AI-Observability
 
 Gold tables, BI dashboards and empirical research results remain later work. Silver retains the distinctions needed for those analyses: evaluation protocol, model version, deployment alias, publication date and price observation time.
+
+## Selected acquisition route
+
+Read [GitHub Actions acquisition](github-acquisition.md) and [transfer readiness](network-readiness.md). Source collection/upload runs on Actions; all Spark runs in Databricks. Instructor acceptance of the changed source-call location is pending. Start with verified tiny transfer before full acquisition.

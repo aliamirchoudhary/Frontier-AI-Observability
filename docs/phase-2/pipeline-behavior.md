@@ -2,7 +2,7 @@
 
 ## Contract enforcement
 
-Define every Spark input schema with StructType and StructField, including nested JSON schemas. Do not use inferred reads, inferred createDataFrame fixtures or inferSchema. Local Parquet footer inspection is contract discovery; it does not permit an inferred Spark reader.
+Define every Spark input schema with StructType and StructField, including nested JSON schemas. Do not use inferred reads, inferred createDataFrame fixtures or inferSchema. Parquet footer inspection inside Databricks is contract discovery; it does not permit an inferred Spark reader.
 
 Preflight every artifact before a Spark action. Compare physical fields and types to the registered contract; a projected schema can otherwise hide newly added columns. For JSON and CSV, inspect raw keys/header and retain corrupt-record information under a declared schema. Unknown fields are not silently dropped. Choose quarantine as the default; do not enable broad automatic schema evolution.
 
@@ -28,7 +28,7 @@ Processing plans list exact files and tables, not broad recursive globs over eve
 
 ## Failures and resumption
 
-Use bounded retries for transient acquisition errors and retain failed-attempt logs. Never advance a successful-processing marker before validation, writes and audit reconciliation complete. Source downloads and Delta writes are separate checkpoints.
+Use bounded retries for transient acquisition errors and retain failed-attempt logs. Never advance a successful-processing marker before validation, writes and audit reconciliation complete. Source-to-Staging, Staging-to-Bronze and Bronze-to-Silver have separate durable processing units and checkpoints.
 
 A committed table write and an audit write are not an atomic multi-table transaction. Interrupted runs must be detected and reconciled with attributable Delta versions; logs must not claim a write was rolled back if it committed. Serialize writers per target table, require explicit retry/recovery and reuse idempotent table logic. A retry creates a new attempt and links to the prior run.
 

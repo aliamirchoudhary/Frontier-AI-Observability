@@ -7,7 +7,7 @@ This checklist remains open until each item has linked execution evidence. Do no
 - [ ] Every file reader has an explicit StructType/StructField contract; no inferred Spark reads or inferred test fixtures.
 - [ ] Every Bronze/Silver record has a non-null load_timestamp.
 - [ ] Conditional MERGE INTO behavior is demonstrated with identical replay and an eligible correction.
-- [ ] Backfills work for Raw-to-Bronze and Bronze-to-Silver independently.
+- [ ] Backfills work for Staging-to-Bronze and Bronze-to-Silver independently.
 - [ ] Unexpected fields, unsafe type changes and corrupt files are isolated and audited.
 - [ ] Separate operational tables record every full/incremental processing unit across both layers.
 - [ ] Logs contain layer, parameter/file, start/end, status and actual rows inserted/updated.
@@ -21,3 +21,8 @@ This checklist remains open until each item has linked execution evidence. Do no
 Suggested evidence location: docs/phase-2/evidence/. Add actual sanitized reports only after execution. Do not add placeholder passed reports or fabricated cloud screenshots.
 
 Repository: https://github.com/aliamirchoudhary/Frontier-AI-Observability
+
+- [ ] Source acquisition runs on Actions with native hashes/redirect evidence and verified volume transfer; Spark runs in Databricks. Record pending instructor acceptance separately.
+- [ ] Separate staging originals/manifests and Bronze table history are demonstrated.
+- [ ] Staging failures, hard-interruption reconciliation and generation-aware Bronze rebuild are demonstrated.
+- [ ] Baseline plus multiple increments recover without business-key duplication or older-state downgrade.

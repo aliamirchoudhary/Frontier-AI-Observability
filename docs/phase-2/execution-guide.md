@@ -4,12 +4,12 @@
 
 ## Prerequisites
 
-A reviewed source manifest, explicit schemas, a writeable Databricks Free Edition catalog/schema, a verified volume upload, deployed code matching a Git commit, and initialized operational tables are required. Use an isolated acceptance namespace before production-like tables.
+A reviewed source manifest, explicit schemas, a writeable Databricks Free Edition catalog/schema, a verified Databricks-acquired staging manifest, deployed code matching a Git commit, and initialized operational tables are required. Use an isolated acceptance namespace before production-like tables.
 
 | Parameter | Meaning |
 | :--- | :--- |
 | mode | full, incremental or backfill; controls planning, not unsafe overwrites |
-| layers | raw_to_bronze, bronze_to_silver or both |
+| layers | staging_to_bronze, bronze_to_silver or both |
 | sources | Explicit reviewed source identifiers |
 | batch_id | Stable identifier for the selected artifact batch |
 | manifest_path | Absolute approved volume manifest or documented input route |
@@ -36,7 +36,7 @@ Values in angle brackets must be supplied from observed setup. This is not a CLI
 
 ## Standard sequence
 
-1. Acquire or select a manifest. Verify bytes and source hashes.
+1. Execute verified Actions source collection and volume upload or select an existing complete staging manifest. Verify bytes and hashes.
 2. Run a dry plan and inspect files, source contracts, dates and target names.
 3. Execute the baseline in both layers, then inspect quality and audit results.
 4. Execute the subsequent native incremental batch in both layers.
@@ -44,10 +44,14 @@ Values in angle brackets must be supplied from observed setup. This is not a CLI
 
 ## Historical backfill
 
-Select a previously acquired batch/path and an optional compatible publication interval. Execute raw_to_bronze to reconstruct missing Bronze records. Then execute bronze_to_silver independently using its batch/artifact selector. Both operations must be repeatable without duplication. Do not redownload current data and call it a historical backfill.
+Select a previously acquired batch/path and an optional compatible publication interval. Execute staging_to_bronze to reconstruct missing Bronze records. Then execute bronze_to_silver independently using its batch/artifact selector. Both operations must be repeatable without duplication. Do not redownload current data and call it a historical backfill.
 
 Inspect audit rows, rejected units, target changes and accepted source ordering after each stage. Older content cannot replace a newer current-state observation. A date filter does not apply to a source without documented publication dates; select that source by batch instead.
 
 ## Recovery and scheduling
 
-Use the recovery procedure for interrupted writes before retrying. Scheduling is optional until the exact manual path succeeds. If available, configure one bounded job with required parameters, a sensible timeout and serialized target writes. Network blocks require the validated local collector/upload route; do not claim automatic collection until that handoff is tested.
+Use the recovery procedure for interrupted writes before retrying. Scheduling is optional until the exact manual path succeeds. If available, configure one bounded job with required parameters, a sensible timeout and serialized target writes. Network blocks stop acquisition; no outside collector or upload fallback is allowed. GitHub Actions can be an optional supported job trigger, never the source-data collector.
+
+## Layer selection and recovery generation
+
+Add acquisition-only selection api_to_staging and a documented all_layers mode. Preserve raw_to_bronze as an optional backwards-compatible alias for staging_to_bronze only if implemented; do not describe non-existent parameters as executable. A recovery_generation parameter identifies a validated reconstruction target. Recreated targets require replay even when old generation checkpoints show success. Baseline and subsequent batch manifests are replayed in verified source order. See staging-and-recovery.md for retention, failure and data-loss rules.

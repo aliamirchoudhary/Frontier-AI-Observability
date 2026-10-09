@@ -1,6 +1,6 @@
 # Scope and acceptance
 
-Implement a bounded batch pipeline rather than a continuously running service. Source acquisition may run locally if workspace networking blocks a publisher. Record parsing, Bronze and Silver processing, Delta writes and acceptance runs must execute in cloud PySpark.
+Implement a bounded batch pipeline. Source acquisition/upload runs on Actions; parsing, Bronze/Silver processing, Delta writes and Spark acceptance run inside Databricks Free Edition. This selected source-call relocation awaits instructor acceptance. Actual authentication/upload failures remain technical blockers.
 
 | Requirement | Implementation target | Acceptance evidence |
 | :--- | :--- | :--- |
@@ -20,3 +20,7 @@ Implement a bounded batch pipeline rather than a continuously running service. S
 The complete original baseline is acquired and processed; a representative sample run is a development check. Sources counted toward the full-load size must feed useful Silver tables. Every original archive is retained; CooperBench result and evaluation members provide its analytical records. Unreviewed trace content is restricted, not made public to increase row counts.
 
 Phase 2 does not require Gold transformations, dashboard construction, paid inference or rerunning CooperBench experiments. Do not add those to the acceptance scope.
+
+## Acquisition decision and requirement status
+
+Selected source-call runtime is GitHub Actions, with native-byte uploads to Databricks staging. All Spark work runs in Free Edition. Instructor acceptance of that changed location is pending. A technically passing end-to-end pipeline does not establish original acquisition-location compliance. Actual supported transfer/authentication is untested until Task 02.
