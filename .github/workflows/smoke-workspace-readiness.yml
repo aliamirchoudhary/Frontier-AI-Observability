@@ -1,15 +1,17 @@
 # Task 02 — tiny synthetic upload/readback smoke test (Phase 2 workspace readiness).
 # MANUAL DISPATCH ONLY. This workflow performs NO source acquisition, NO real payload,
 # NO commits, NO public artifacts and NO overwrite. It tests exactly three primitives:
-#   1) authenticated Files API upload of a 51-byte synthetic file to restricted staging,
-#   2) runner-side download readback with SHA-256 comparison,
+#   1) authenticated Files API upload of a 51-byte synthetic file to restricted staging
+#      (PUT /api/2.0/fs/files{path}, raw bytes; parent dirs via idempotent PUT /fs/directories)
+#   2) runner-side download readback with SHA-256 comparison (GET /api/2.0/fs/files{path})
 #   3) idempotent publication: same id + same bytes -> verified reuse; same id + different
-#      bytes -> rejection WITHOUT overwrite (overwrite is never requested anywhere).
+#      bytes -> rejection via overwrite=false WITHOUT overwrite (overwrite=true never sent).
 # Human prerequisites (set by the human, values never pasted in chat/logs/files):
 #   secrets: DATABRICKS_HOST, DATABRICKS_STAGING_TOKEN
 #   variable: DATABRICKS_VOLUME_ROOT = /Volumes/<catalog>/<schema>/<volume>
 # See docs/phase-2/implementation-evidence/task-02-checklist.md for exact human steps.
 # References: docs/phase-2/github-acquisition.md, docs/phase-2/network-readiness.md
+# Endpoint contract: https://docs.databricks.com/api/files/v2/file (Files API fs/files + fs/directories)
 name: smoke - workspace readiness
 
 on:
@@ -76,7 +78,7 @@ jobs:
           [ "$actual" = "$EXPECTED_SHA256" ] || { echo "::error::synthetic hash drift"; exit 1; }
           echo "local synthetic hash verified: $actual"
 
-      - name: Upload per-attempt STARTED event, then synthetic artifact (no overwrite)
+      - name: Create staging dirs, upload STARTED event, then synthetic artifact (no overwrite)
         env:
           IN_HOST: ${{ secrets.DATABRICKS_HOST }}
           IN_TOKEN: ${{ secrets.DATABRICKS_STAGING_TOKEN }}
@@ -85,7 +87,8 @@ jobs:
         run: |
           set -euo pipefail
           api="${IN_HOST%/}"
-          base="$api/api/2.0/files"
+          files="$api/api/2.0/fs/files"
+          dirs="$api/api/2.0/fs/directories"
           root="${IN_VOLUME_ROOT%/}"
           unit="$root/smoke/task-02/$IN_SYNTHETIC_ID"
           started_path="$unit/events/started-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
@@ -93,19 +96,34 @@ jobs:
           printf '{"event":"started","task":"task-02","synthetic_id":"%s","run_id":"%s","run_attempt":"%s","code_sha":"%s"}\n' \
             "$IN_SYNTHETIC_ID" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" > "$RUNNER_TEMP/started.json"
 
+          # Ensure parent directories exist (PUT /fs/directories is idempotent, mkdir -p).
+          for d in "$unit/events" "$unit/artifacts"; do
+            code=$(curl -sS -o "$RUNNER_TEMP/dir_body.txt" -w '%{http_code}' \
+              -X PUT -H "Authorization: Bearer $IN_TOKEN" \
+              "$dirs$d" || echo "000")
+            case "$code" in
+              2*) ;;
+              *) echo "::error::directory create failed for path unit; transfer route unusable"; head -c 400 "$RUNNER_TEMP/dir_body.txt"; exit 1 ;;
+            esac
+          done
+          echo "staging directories ensured (path redacted to id only: $IN_SYNTHETIC_ID)"
+
           # Attempt 1: audit STARTED event first; upload access failure aborts (transfer contract step 3).
+          # Per-run unique path; default overwrite behavior is safe and never overwrite=true on artifacts.
           code=$(curl -sS -o "$RUNNER_TEMP/started_body.txt" -w '%{http_code}' \
-            -H "Authorization: Bearer $IN_TOKEN" \
-            -F "file=@$RUNNER_TEMP/started.json" \
-            "$base/import-file?file_path=$started_path" || echo "000")
+            -X PUT -H "Authorization: Bearer $IN_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$RUNNER_TEMP/started.json" \
+            "$files$started_path" || echo "000")
           echo "STARTED event upload http=$code (path redacted to id only: $IN_SYNTHETIC_ID)"
           case "$code" in 2*) ;; *) echo "::error::STARTED event upload failed; transfer route unusable"; cat "$RUNNER_TEMP/started_body.txt" | head -c 400; exit 1;; esac
 
-          # Attempt 2: synthetic artifact. overwrite is NEVER passed (never true).
+          # Attempt 2: synthetic artifact. overwrite=false rejects an existing path; overwrite=true is NEVER sent.
           code=$(curl -sS -o "$RUNNER_TEMP/upload_body.txt" -w '%{http_code}' \
-            -H "Authorization: Bearer $IN_TOKEN" \
-            -F "file=@$RUNNER_TEMP/synthetic.txt" \
-            "$base/import-file?file_path=$artifact_path" || echo "000")
+            -X PUT -H "Authorization: Bearer $IN_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$RUNNER_TEMP/synthetic.txt" \
+            "$files$artifact_path?overwrite=false" || echo "000")
           echo "artifact upload http=$code"
           echo "ARTIFACT_UPLOAD_HTTP=$code" >> "$GITHUB_STEP_SUMMARY"
           case "$code" in
@@ -126,7 +144,7 @@ jobs:
           artifact_path="$root/smoke/task-02/$IN_SYNTHETIC_ID/artifacts/synthetic.txt"
           code=$(curl -sS -o "$RUNNER_TEMP/download.bin" -w '%{http_code}' \
             -H "Authorization: Bearer $IN_TOKEN" \
-            "$api/api/2.0/files/download?file_path=$artifact_path" || echo "000")
+            "$api/api/2.0/fs/files$artifact_path" || echo "000")
           echo "readback http=$code"
           [ "${code#2}" != "$code" ] || { echo "::error::readback failed"; exit 1; }
           got=$(sha256sum "$RUNNER_TEMP/download.bin" | cut -d' ' -f1)
@@ -147,15 +165,17 @@ jobs:
           root="${IN_VOLUME_ROOT%/}"
           artifact_path="$root/smoke/task-02/$IN_SYNTHETIC_ID/artifacts/synthetic.txt"
 
-          # (a) Same id + SAME bytes again: safe reuse. Accept 2xx (verified identical) or
-          #     non-2xx rejection; in both cases the persisted object must hash to EXPECTED.
+          # (a) Same id + SAME bytes again: overwrite=false on an existing path must NOT change
+          #     the persisted object. Accept 2xx (identical rewrite allowed only if API treats it
+          #     as no-op) or non-2xx rejection; in both cases persisted object must hash to EXPECTED.
           code=$(curl -sS -o "$RUNNER_TEMP/reuse_body.txt" -w '%{http_code}' \
-            -H "Authorization: Bearer $IN_TOKEN" \
-            -F "file=@$RUNNER_TEMP/synthetic.txt" \
-            "$api/api/2.0/files/import-file?file_path=$artifact_path" || echo "000")
+            -X PUT -H "Authorization: Bearer $IN_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$RUNNER_TEMP/synthetic.txt" \
+            "$api/api/2.0/fs/files$artifact_path?overwrite=false" || echo "000")
           echo "same-id same-bytes upload http=$code"
           curl -sS -o "$RUNNER_TEMP/reuse.bin" -H "Authorization: Bearer $IN_TOKEN" \
-            "$api/api/2.0/files/download?file_path=$artifact_path"
+            "$api/api/2.0/fs/files$artifact_path"
           reuse_hash=$(sha256sum "$RUNNER_TEMP/reuse.bin" | cut -d' ' -f1)
           [ "$reuse_hash" = "$EXPECTED_SHA256" ] || { echo "::error::reuse check: persisted hash changed unexpectedly"; exit 1; }
           echo "IDEMPOTENT_REUSE=PASS http=$code persisted_sha=$reuse_hash" >> "$GITHUB_STEP_SUMMARY"
@@ -163,16 +183,17 @@ jobs:
           # (b) Same id + DIFFERENT bytes: must be rejected (non-2xx) and must NOT overwrite.
           printf '%s\n' "$MUTATED_PLAINTEXT" > "$RUNNER_TEMP/mutated.txt"
           code=$(curl -sS -o "$RUNNER_TEMP/reject_body.txt" -w '%{http_code}' \
-            -H "Authorization: Bearer $IN_TOKEN" \
-            -F "file=@$RUNNER_TEMP/mutated.txt" \
-            "$api/api/2.0/files/import-file?file_path=$artifact_path" || echo "000")
+            -X PUT -H "Authorization: Bearer $IN_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$RUNNER_TEMP/mutated.txt" \
+            "$api/api/2.0/fs/files$artifact_path?overwrite=false" || echo "000")
           echo "same-id different-bytes upload http=$code"
           if [ "${code#2}" != "$code" ]; then
             echo "::error::mutated upload was ACCEPTED; overwrite protection is NOT working"
             exit 1
           fi
           curl -sS -o "$RUNNER_TEMP/after.bin" -H "Authorization: Bearer $IN_TOKEN" \
-            "$api/api/2.0/files/download?file_path=$artifact_path"
+            "$api/api/2.0/fs/files$artifact_path"
           after_hash=$(sha256sum "$RUNNER_TEMP/after.bin" | cut -d' ' -f1)
           [ "$after_hash" = "$EXPECTED_SHA256" ] || { echo "::error::existing object was altered"; exit 1; }
           echo "IDEMPOTENT_REJECT=PASS reject_http=$code persisted_sha=$after_hash" >> "$GITHUB_STEP_SUMMARY"
@@ -190,9 +211,10 @@ jobs:
           printf '{"event":"ready","task":"task-02","synthetic_id":"%s","sha256":"%s","bytes":51,"run_id":"%s","run_attempt":"%s","code_sha":"%s"}\n' \
             "$IN_SYNTHETIC_ID" "$EXPECTED_SHA256" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" > "$RUNNER_TEMP/ready.json"
           code=$(curl -sS -o "$RUNNER_TEMP/ready_body.txt" -w '%{http_code}' \
-            -H "Authorization: Bearer $IN_TOKEN" \
-            -F "file=@$RUNNER_TEMP/ready.json" \
-            "${IN_HOST%/}/api/2.0/files/import-file?file_path=$ready_path" || echo "000")
+            -X PUT -H "Authorization: Bearer $IN_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$RUNNER_TEMP/ready.json" \
+            "${IN_HOST%/}/api/2.0/fs/files$ready_path" || echo "000")
           echo "READY marker upload http=$code"
           case "$code" in 2*) echo "smoke unit complete" ;; *) echo "::error::READY marker upload failed"; exit 1 ;; esac
           echo "SMOKE_RESULT=PASS run_id=$GITHUB_RUN_ID code_sha=$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
