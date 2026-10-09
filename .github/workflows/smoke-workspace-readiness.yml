@@ -1,0 +1,198 @@
+# Task 02 — tiny synthetic upload/readback smoke test (Phase 2 workspace readiness).
+# MANUAL DISPATCH ONLY. This workflow performs NO source acquisition, NO real payload,
+# NO commits, NO public artifacts and NO overwrite. It tests exactly three primitives:
+#   1) authenticated Files API upload of a 51-byte synthetic file to restricted staging,
+#   2) runner-side download readback with SHA-256 comparison,
+#   3) idempotent publication: same id + same bytes -> verified reuse; same id + different
+#      bytes -> rejection WITHOUT overwrite (overwrite is never requested anywhere).
+# Human prerequisites (set by the human, values never pasted in chat/logs/files):
+#   secrets: DATABRICKS_HOST, DATABRICKS_STAGING_TOKEN
+#   variable: DATABRICKS_VOLUME_ROOT = /Volumes/<catalog>/<schema>/<volume>
+# See docs/phase-2/implementation-evidence/task-02-checklist.md for exact human steps.
+# References: docs/phase-2/github-acquisition.md, docs/phase-2/network-readiness.md
+name: smoke - workspace readiness
+
+on:
+  workflow_dispatch:
+    inputs:
+      synthetic_id:
+        description: "Stable synthetic object id (alnum/dash). Reuse task-02-smoke-01 for the idempotency sub-test."
+        required: true
+        default: "task-02-smoke-01"
+      repeat_idempotency:
+        description: "Also run same-id/same-bytes reuse check and same-id/different-bytes rejection check"
+        required: false
+        default: true
+        type: boolean
+
+# Minimum permissions; no contents write, no id-token, no packages.
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-workspace-readiness
+  cancel-in-progress: false
+
+env:
+  # Deterministic synthetic payload: exactly these bytes plus trailing LF (51 bytes).
+  SYNTHETIC_PLAINTEXT: "frontier-ai-observatory task-02 synthetic smoke v1"
+  EXPECTED_SHA256: a684c4422a38df806f861c6ae4fa589ca847e4ffdbe2b69109f10ae2dfcd06f8
+  MUTATED_PLAINTEXT: "frontier-ai-observatory task-02 synthetic smoke v1 MUTATED"
+
+jobs:
+  tiny-upload-smoke:
+    name: tiny synthetic upload and readback
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate inputs and required configuration presence (values never printed)
+        env:
+          IN_SYNTHETIC_ID: ${{ inputs.synthetic_id }}
+          IN_HOST: ${{ secrets.DATABRICKS_HOST }}
+          IN_TOKEN: ${{ secrets.DATABRICKS_STAGING_TOKEN }}
+          IN_VOLUME_ROOT: ${{ vars.DATABRICKS_VOLUME_ROOT }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          echo "$IN_SYNTHETIC_ID" | grep -Eq '^[A-Za-z0-9-]{1,64}$' \
+            || fail "synthetic_id must be alnum/dash, 1-64 chars"
+          [ -n "$IN_HOST" ] || fail "secret DATABRICKS_HOST is not set"
+          [ -n "$IN_TOKEN" ] || fail "secret DATABRICKS_STAGING_TOKEN is not set"
+          [ -n "$IN_VOLUME_ROOT" ] || fail "variable DATABRICKS_VOLUME_ROOT is not set"
+          echo "$IN_HOST" | grep -Eq '^https://[A-Za-z0-9.-]+$' \
+            || fail "DATABRICKS_HOST must be a bare https:// host (no path, no trailing slash)"
+          echo "$IN_VOLUME_ROOT" | grep -Eq '^/Volumes/[A-Za-z0-9._/-]+$' \
+            || fail "DATABRICKS_VOLUME_ROOT must be a /Volumes/... path of safe characters"
+          echo "inputs validated (host and volume root redacted; token never displayed)"
+
+      - name: Generate deterministic synthetic file and verify local hash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$SYNTHETIC_PLAINTEXT" > "$RUNNER_TEMP/synthetic.txt"
+          actual=$(sha256sum "$RUNNER_TEMP/synthetic.txt" | cut -d' ' -f1)
+          bytes=$(wc -c < "$RUNNER_TEMP/synthetic.txt")
+          echo "synthetic bytes=$bytes (expect 51)"
+          [ "$bytes" -eq 51 ] || { echo "::error::unexpected synthetic size"; exit 1; }
+          [ "$actual" = "$EXPECTED_SHA256" ] || { echo "::error::synthetic hash drift"; exit 1; }
+          echo "local synthetic hash verified: $actual"
+
+      - name: Upload per-attempt STARTED event, then synthetic artifact (no overwrite)
+        env:
+          IN_HOST: ${{ secrets.DATABRICKS_HOST }}
+          IN_TOKEN: ${{ secrets.DATABRICKS_STAGING_TOKEN }}
+          IN_VOLUME_ROOT: ${{ vars.DATABRICKS_VOLUME_ROOT }}
+          IN_SYNTHETIC_ID: ${{ inputs.synthetic_id }}
+        run: |
+          set -euo pipefail
+          api="${IN_HOST%/}"
+          base="$api/api/2.0/files"
+          root="${IN_VOLUME_ROOT%/}"
+          unit="$root/smoke/task-02/$IN_SYNTHETIC_ID"
+          started_path="$unit/events/started-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          artifact_path="$unit/artifacts/synthetic.txt"
+          printf '{"event":"started","task":"task-02","synthetic_id":"%s","run_id":"%s","run_attempt":"%s","code_sha":"%s"}\n' \
+            "$IN_SYNTHETIC_ID" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" > "$RUNNER_TEMP/started.json"
+
+          # Attempt 1: audit STARTED event first; upload access failure aborts (transfer contract step 3).
+          code=$(curl -sS -o "$RUNNER_TEMP/started_body.txt" -w '%{http_code}' \
+            -H "Authorization: Bearer $IN_TOKEN" \
+            -F "file=@$RUNNER_TEMP/started.json" \
+            "$base/import-file?file_path=$started_path" || echo "000")
+          echo "STARTED event upload http=$code (path redacted to id only: $IN_SYNTHETIC_ID)"
+          case "$code" in 2*) ;; *) echo "::error::STARTED event upload failed; transfer route unusable"; cat "$RUNNER_TEMP/started_body.txt" | head -c 400; exit 1;; esac
+
+          # Attempt 2: synthetic artifact. overwrite is NEVER passed (never true).
+          code=$(curl -sS -o "$RUNNER_TEMP/upload_body.txt" -w '%{http_code}' \
+            -H "Authorization: Bearer $IN_TOKEN" \
+            -F "file=@$RUNNER_TEMP/synthetic.txt" \
+            "$base/import-file?file_path=$artifact_path" || echo "000")
+          echo "artifact upload http=$code"
+          echo "ARTIFACT_UPLOAD_HTTP=$code" >> "$GITHUB_STEP_SUMMARY"
+          case "$code" in
+            2*) echo "artifact upload accepted" ;;
+            *) echo "::error::artifact upload failed (route or privileges not ready)"; head -c 400 "$RUNNER_TEMP/upload_body.txt"; exit 1 ;;
+          esac
+
+      - name: Runner readback download and SHA-256 comparison
+        env:
+          IN_HOST: ${{ secrets.DATABRICKS_HOST }}
+          IN_TOKEN: ${{ secrets.DATABRICKS_STAGING_TOKEN }}
+          IN_VOLUME_ROOT: ${{ vars.DATABRICKS_VOLUME_ROOT }}
+          IN_SYNTHETIC_ID: ${{ inputs.synthetic_id }}
+        run: |
+          set -euo pipefail
+          api="${IN_HOST%/}"
+          root="${IN_VOLUME_ROOT%/}"
+          artifact_path="$root/smoke/task-02/$IN_SYNTHETIC_ID/artifacts/synthetic.txt"
+          code=$(curl -sS -o "$RUNNER_TEMP/download.bin" -w '%{http_code}' \
+            -H "Authorization: Bearer $IN_TOKEN" \
+            "$api/api/2.0/files/download?file_path=$artifact_path" || echo "000")
+          echo "readback http=$code"
+          [ "${code#2}" != "$code" ] || { echo "::error::readback failed"; exit 1; }
+          got=$(sha256sum "$RUNNER_TEMP/download.bin" | cut -d' ' -f1)
+          echo "readback sha256=$got"
+          [ "$got" = "$EXPECTED_SHA256" ] || { echo "::error::readback hash mismatch"; exit 1; }
+          echo "RUNNER_READBACK=PASS sha256=$got" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Idempotency sub-test (reuse same bytes; reject different bytes; never overwrite)
+        if: ${{ inputs.repeat_idempotency }}
+        env:
+          IN_HOST: ${{ secrets.DATABRICKS_HOST }}
+          IN_TOKEN: ${{ secrets.DATABRICKS_STAGING_TOKEN }}
+          IN_VOLUME_ROOT: ${{ vars.DATABRICKS_VOLUME_ROOT }}
+          IN_SYNTHETIC_ID: ${{ inputs.synthetic_id }}
+        run: |
+          set -euo pipefail
+          api="${IN_HOST%/}"
+          root="${IN_VOLUME_ROOT%/}"
+          artifact_path="$root/smoke/task-02/$IN_SYNTHETIC_ID/artifacts/synthetic.txt"
+
+          # (a) Same id + SAME bytes again: safe reuse. Accept 2xx (verified identical) or
+          #     non-2xx rejection; in both cases the persisted object must hash to EXPECTED.
+          code=$(curl -sS -o "$RUNNER_TEMP/reuse_body.txt" -w '%{http_code}' \
+            -H "Authorization: Bearer $IN_TOKEN" \
+            -F "file=@$RUNNER_TEMP/synthetic.txt" \
+            "$api/api/2.0/files/import-file?file_path=$artifact_path" || echo "000")
+          echo "same-id same-bytes upload http=$code"
+          curl -sS -o "$RUNNER_TEMP/reuse.bin" -H "Authorization: Bearer $IN_TOKEN" \
+            "$api/api/2.0/files/download?file_path=$artifact_path"
+          reuse_hash=$(sha256sum "$RUNNER_TEMP/reuse.bin" | cut -d' ' -f1)
+          [ "$reuse_hash" = "$EXPECTED_SHA256" ] || { echo "::error::reuse check: persisted hash changed unexpectedly"; exit 1; }
+          echo "IDEMPOTENT_REUSE=PASS http=$code persisted_sha=$reuse_hash" >> "$GITHUB_STEP_SUMMARY"
+
+          # (b) Same id + DIFFERENT bytes: must be rejected (non-2xx) and must NOT overwrite.
+          printf '%s\n' "$MUTATED_PLAINTEXT" > "$RUNNER_TEMP/mutated.txt"
+          code=$(curl -sS -o "$RUNNER_TEMP/reject_body.txt" -w '%{http_code}' \
+            -H "Authorization: Bearer $IN_TOKEN" \
+            -F "file=@$RUNNER_TEMP/mutated.txt" \
+            "$api/api/2.0/files/import-file?file_path=$artifact_path" || echo "000")
+          echo "same-id different-bytes upload http=$code"
+          if [ "${code#2}" != "$code" ]; then
+            echo "::error::mutated upload was ACCEPTED; overwrite protection is NOT working"
+            exit 1
+          fi
+          curl -sS -o "$RUNNER_TEMP/after.bin" -H "Authorization: Bearer $IN_TOKEN" \
+            "$api/api/2.0/files/download?file_path=$artifact_path"
+          after_hash=$(sha256sum "$RUNNER_TEMP/after.bin" | cut -d' ' -f1)
+          [ "$after_hash" = "$EXPECTED_SHA256" ] || { echo "::error::existing object was altered"; exit 1; }
+          echo "IDEMPOTENT_REJECT=PASS reject_http=$code persisted_sha=$after_hash" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish READY marker (per-run path, no overwrite of artifact)
+        env:
+          IN_HOST: ${{ secrets.DATABRICKS_HOST }}
+          IN_TOKEN: ${{ secrets.DATABRICKS_STAGING_TOKEN }}
+          IN_VOLUME_ROOT: ${{ vars.DATABRICKS_VOLUME_ROOT }}
+          IN_SYNTHETIC_ID: ${{ inputs.synthetic_id }}
+        run: |
+          set -euo pipefail
+          root="${IN_VOLUME_ROOT%/}"
+          ready_path="$root/smoke/task-02/$IN_SYNTHETIC_ID/events/ready-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+          printf '{"event":"ready","task":"task-02","synthetic_id":"%s","sha256":"%s","bytes":51,"run_id":"%s","run_attempt":"%s","code_sha":"%s"}\n' \
+            "$IN_SYNTHETIC_ID" "$EXPECTED_SHA256" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_SHA" > "$RUNNER_TEMP/ready.json"
+          code=$(curl -sS -o "$RUNNER_TEMP/ready_body.txt" -w '%{http_code}' \
+            -H "Authorization: Bearer $IN_TOKEN" \
+            -F "file=@$RUNNER_TEMP/ready.json" \
+            "${IN_HOST%/}/api/2.0/files/import-file?file_path=$ready_path" || echo "000")
+          echo "READY marker upload http=$code"
+          case "$code" in 2*) echo "smoke unit complete" ;; *) echo "::error::READY marker upload failed"; exit 1 ;; esac
+          echo "SMOKE_RESULT=PASS run_id=$GITHUB_RUN_ID code_sha=$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"

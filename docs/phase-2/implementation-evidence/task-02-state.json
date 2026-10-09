@@ -1,0 +1,96 @@
+{
+  "task_id": "task-02",
+  "title": "Verify Free Edition and Actions upload primitives",
+  "branch": "phase2/workspace-readiness",
+  "base_sha": "d8962c810065b044079e83a6f69d8438e76cd256",
+  "recorded_on": "2026-10-09",
+  "committed": false,
+  "changed_paths": [
+    ".github/workflows/smoke-workspace-readiness.yml",
+    "notebooks/workspace_readiness.py",
+    "notebooks/README.md",
+    "docs/phase-2/implementation-evidence/task-02-checklist.md",
+    "docs/phase-2/implementation-evidence/task-02-state.json",
+    "docs/phase-2/implementation-evidence/task-02-verification.md"
+  ],
+  "code_fingerprint": {
+    "algorithm": "sha256",
+    "combined_value": "be65564346c4ea839bcf13ccb11870f727e8686a53f90fff534a1b2203e44a11",
+    "total_bytes": 23946,
+    "covers": [
+      {
+        "path": ".github/workflows/smoke-workspace-readiness.yml",
+        "sha256": "6844db8bf9de3cd26c43a884787d8b044ea43982a16489ab0f06cdaedb473022",
+        "bytes": 11252
+      },
+      {
+        "path": "notebooks/workspace_readiness.py",
+        "sha256": "a163bf82cd484ac5c39ee6078a36434bd4eab6ed22d6827256d78fbe0e63a14c",
+        "bytes": 12694
+      }
+    ],
+    "note": "combined_value is SHA-256 over the concatenation of the two covered files in the listed order. Any byte change to a covered file invalidates this fingerprint and requires re-verification even if HEAD is unchanged. Re-fingerprinted 2026-10-09 after DEFECT-1 fix (notebook only; workflow bytes unchanged)."
+  },
+  "synthetic_fixture": {
+    "description": "51-byte UTF-8 payload: 'frontier-ai-observatory task-02 synthetic smoke v1' plus trailing LF",
+    "bytes": 51,
+    "sha256": "a684c4422a38df806f861c6ae4fa589ca847e4ffdbe2b69109f10ae2dfcd06f8",
+    "default_id": "task-02-smoke-01"
+  },
+  "runtime_status": {
+    "local_authoring": "completed",
+    "local_checks": "passed",
+    "secret_contract": "matched-by-name-verified-2026-10-09-values-never-read",
+    "github_actions_dispatch": "pending-human-commit-push-and-dispatch",
+    "databricks_notebook_run": "blocked-awaiting-dispatch-and-workspace-run-by-human",
+    "job_trigger_test": "blocked-capability-unknown"
+  },
+  "verification_status": "independent-agent-verification-completed-2026-10-09",
+  "verification": {
+    "phase": "RUNTIME_PENDING",
+    "document": "docs/phase-2/implementation-evidence/task-02-verification.md",
+    "counts": { "pass": 12, "fail": 1, "blocked": 7, "na": 3, "accepted": 0, "note": "original independent pass; after DEFECT-1 fix + addendum re-verify: pass 13, fail 0, blocked 7, na 3, accepted 0" },
+    "cloud_runs_observed": 0,
+    "runner_sha_bound": false,
+    "findings": [
+      {
+        "id": "DEFECT-1",
+        "file": "notebooks/workspace_readiness.py",
+        "line": 232,
+        "summary": "summary field merge_first_inserted used op_metrics[-1]; history(2) is newest-first so [-1] was the creation/prior version and the field misreported (0 or stale). MERGE_METRICS/EXACT_REPLAY authoritative prints were unaffected.",
+        "disposition": "fixed-2026-10-09-awaiting-commit",
+        "fix": "first-merge row selected by version (version_before + 1) with exactly-one guard; summary reads first_merge_metrics[0]; added merge_first_updated field; local re-verify: ast.parse OK, structure 13/13, no op_metrics[-1] residual, privacy CLEAN; notebook sha a163bf82..., combined fingerprint be655643..."
+      },
+      {
+        "id": "RECORD-1",
+        "summary": "checklist T02-E08 describes README edit as one status row; actual diff also rewrites heading/table. Scope unaffected (task-owned file).",
+        "disposition": "noted-in-verification"
+      },
+      {
+        "id": "RECORD-2",
+        "summary": "checklist T02-E23 claims literal instructor markers in README; README uses status wording instead. No acceptance claimed anywhere - requirement satisfied.",
+        "disposition": "noted-in-verification"
+      }
+    ],
+    "accepted_runtime_evidence": []
+  },
+  "safe_evidence_references": [
+    "docs/phase-2/implementation-evidence/task-02-checklist.md",
+    "docs/phase-2/implementation-evidence/task-02-verification.md",
+    "docs/phase-2/github-acquisition.md",
+    "docs/phase-2/network-readiness.md",
+    "docs/phase-2/execution-guide.md"
+  ],
+  "required_human_secrets_and_variables": {
+    "secrets": ["DATABRICKS_HOST", "DATABRICKS_STAGING_TOKEN"],
+    "variables": ["DATABRICKS_VOLUME_ROOT"],
+    "note": "Names only; verified present via GitHub API on 2026-10-09. Values never read, displayed or stored. Additional unused names exist (DATABRICKS_CATALOG, STAGING_VOLUME_PATH) and are ignored by the workflow."
+  },
+  "instructor_acceptance_of_actions_route": "pending",
+  "claims": {
+    "cloud_success": false,
+    "transfer_success": false,
+    "billing_enabled": false,
+    "real_source_data_used": false
+  }
+}
