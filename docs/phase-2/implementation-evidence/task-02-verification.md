@@ -99,6 +99,28 @@ Human instruction: "Fix workflow." → DEFECT-2 fixed after runtime discovery.
 
 **Post-fix counts:** PASS 13 · FAIL 0 · BLOCKED 7 (items 1, 3, 4, 5, 6, 16-runtime, 21 — runtime evidence still pending the fixed-workflow dispatch) · N/A 3 · ACCEPTED 0 — overall remains `RUNTIME_PENDING`.
 
+## Post-fix addendum 3 (2026-10-09, same day — fixed-workflow dispatch under human "Do yourself" instruction)
+
+**Chain executed:** DEFECT-2 fix committed as `50ae9914` on `phase2/workspace-readiness` (author=committer=`aliamirchoudhary`), pushed; merged into `main` as `329035d1` (normal merge, no force); one dispatch of `smoke - workspace readiness` at ref=`main`, inputs `synthetic_id=task-02-smoke-01`, `repeat_idempotency=true`.
+
+**Run [`37970998426`](https://github.com/aliamirchoudhary/Frontier-AI-Observability/actions/runs/37970998426) — head `329035d1` — conclusion: SUCCESS — 8/8 steps success:**
+
+| Marker | Value |
+|---|---|
+| STARTED event upload | http=204 |
+| artifact upload (`overwrite=false`) | http=204 |
+| runner readback | http=200; `RUNNER_READBACK=PASS` sha256=`a684c442…` (51 bytes) |
+| same-id / same-bytes upload | http=409 (rejected by `overwrite=false`); `IDEMPOTENT_REUSE=PASS` persisted sha unchanged |
+| same-id / different-bytes upload | http=409 (rejected); `IDEMPOTENT_REJECT=PASS` persisted sha unchanged |
+| READY marker upload | http=204 |
+| `SMOKE_RESULT` | **PASS** run_id=37970998426 code_sha=`329035d1…` |
+
+**Item results after this run:** #3 T02-E03 **ACCEPTED** (Actions-side) · #4 T02-E04 **ACCEPTED** (Actions-side) · #21 T02-E21 **ACCEPTED** (Actions-side; STARTED/READY markers + runner SHA bound) · #16 boundary runtime-match now evidenced on the Actions half (Databricks half pending notebook run) · #2 token validity now runtime-proven (auth succeeded end-to-end).
+
+**Still pending (unchanged):** #1 edition/billing evidence (human) · #5 notebook run in workspace (human; `code_sha=50ae9914…` or merge `329035d1` — use the SHA the workspace repo is attached at) · #6 job trigger unknown · instructor acceptance of Actions source-call route.
+
+**Volume state:** only synthetic objects under `smoke/task-02/task-02-smoke-01/` exist (51-byte artifact + per-run event markers); no real payloads; no cleanup required; no second dispatch performed.
+
 ## Not claimed
 
 No cloud execution, no transfer success, no import-route result, no billing verification, no human peer approval, no instructor acceptance — this file is agent technical verification only.

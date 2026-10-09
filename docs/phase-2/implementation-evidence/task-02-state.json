@@ -41,18 +41,40 @@
     "local_authoring": "completed",
     "local_checks": "passed",
     "secret_contract": "matched-by-name-verified-2026-10-09-values-never-read",
-    "github_actions_dispatch": "pending-human-commit-push-and-dispatch",
-    "databricks_notebook_run": "blocked-awaiting-dispatch-and-workspace-run-by-human",
+    "github_actions_dispatch": "passed-run-37970998426-2026-10-09",
+    "databricks_notebook_run": "blocked-awaiting-workspace-run-by-human",
     "job_trigger_test": "blocked-capability-unknown"
   },
   "verification_status": "independent-agent-verification-completed-2026-10-09",
   "verification": {
     "phase": "RUNTIME_PENDING",
+    "phase_note": "Actions smoke RUNTIME EVIDENCE RECORDED (run 37970998426, success, all 8 steps). Remaining runtime items: notebook run in workspace (T02-E05), edition/billing evidence (T02-E01), job trigger (T02-E06), instructor acceptance of Actions route.",
     "document": "docs/phase-2/implementation-evidence/task-02-verification.md",
-    "counts": { "pass": 12, "fail": 1, "blocked": 7, "na": 3, "accepted": 0, "note": "original independent pass; after DEFECT-1 fix + addendum re-verify: pass 13, fail 0, blocked 7, na 3, accepted 0" },
-    "cloud_runs_observed": 2,
-    "cloud_runs_note": "runs 37966987073 (pre-fix; input validation fail on DATABRICKS_HOST shape, human fixed secret) and 37967657832 (pre-fix; HTTP 404 on legacy endpoint, step 4, after validation+synthetic PASS). Both against f4a3eacd; neither uploaded any volume object. Next dispatch awaits fixed-workflow commit+push+merge.",
-    "runner_sha_bound": false,
+    "counts": { "pass": 12, "fail": 1, "blocked": 7, "na": 3, "accepted": 0, "note": "original independent pass; after DEFECT-1 and DEFECT-2 fixes + addenda re-verify: pass 13, fail 0; after smoke run 37970998426 success: T02-E03/E04/E21 Actions-side evidence captured; notebook/edition/job items remain pending" },
+    "cloud_runs_observed": 3,
+    "cloud_runs_note": "runs 37966987073 (pre-fix; validation fail on DATABRICKS_HOST shape, human fixed secret) and 37967657832 (pre-fix; HTTP 404 on legacy endpoint, step 4) both against f4a3eacd; neither uploaded any volume object. Run 37970998426 (2026-10-09T18:06:43Z) against 329035d1 (merge of 50ae9914 fix) SUCCESS all 8 steps.",
+    "runner_sha_bound": true,
+    "runner_evidence": {
+      "run_id": 37970998426,
+      "run_url": "https://github.com/aliamirchoudhary/Frontier-AI-Observability/actions/runs/37970998426",
+      "head_sha": "329035d14d0ca5fbad4620de2253e5c0eeb09634",
+      "workflow_fix_commit": "50ae9914abefa97ba9ef784079d1a3f0dd103ae6",
+      "conclusion": "success",
+      "steps": "8/8 success",
+      "sanitized_markers": {
+        "started_upload_http": 204,
+        "artifact_upload_http": 204,
+        "readback_http": 200,
+        "runner_readback": "PASS sha256=a684c442... (51 bytes)",
+        "same_id_same_bytes_http": 409,
+        "idempotent_reuse": "PASS persisted_sha=a684c442...",
+        "same_id_different_bytes_http": 409,
+        "idempotent_reject": "PASS persisted_sha unchanged",
+        "ready_marker_http": 204,
+        "smoke_result": "PASS"
+      },
+      "volume_namespace_touched": "smoke/task-02/task-02-smoke-01/{events,artifacts} only (synthetic 51-byte artifact + per-run STARTED/READY JSON markers)"
+    },
     "findings": [
       {
         "id": "DEFECT-1",
@@ -80,7 +102,11 @@
         "disposition": "noted-in-verification"
       }
     ],
-    "accepted_runtime_evidence": []
+    "accepted_runtime_evidence": [
+      "T02-E03 tiny upload: run 37970998426 success; STARTED http=204, artifact http=204, readback http=200, RUNNER_READBACK=PASS (51 B, a684c442...)",
+      "T02-E04 idempotency: same-id/same-bytes http=409 persisted hash unchanged IDEMPOTENT_REUSE=PASS; same-id/different-bytes http=409 rejected, persisted hash unchanged IDEMPOTENT_REJECT=PASS; overwrite=true never sent",
+      "T02-E21 transfer evidence: STARTED+READY per-run JSON markers under smoke/task-02/task-02-smoke-01/events/ with run_id/attempt/code_sha; runner SHA bound to 329035d1"
+    ]
   },
   "safe_evidence_references": [
     "docs/phase-2/implementation-evidence/task-02-checklist.md",
