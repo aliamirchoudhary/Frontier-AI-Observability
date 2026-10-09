@@ -15,13 +15,13 @@
   ],
   "code_fingerprint": {
     "algorithm": "sha256",
-    "combined_value": "be65564346c4ea839bcf13ccb11870f727e8686a53f90fff534a1b2203e44a11",
-    "total_bytes": 23946,
+    "combined_value": "b3ccc5d653d61b370d6e1c9f07e27621a3104b0ddd0a05ece1fbe69e49051387",
+    "total_bytes": 25385,
     "covers": [
       {
         "path": ".github/workflows/smoke-workspace-readiness.yml",
-        "sha256": "6844db8bf9de3cd26c43a884787d8b044ea43982a16489ab0f06cdaedb473022",
-        "bytes": 11252
+        "sha256": "04bc176a7c6755cf4ac968ce4a2e6d7a4f760dd2771503faf55529169ba132e4",
+        "bytes": 12691
       },
       {
         "path": "notebooks/workspace_readiness.py",
@@ -29,7 +29,7 @@
         "bytes": 12694
       }
     ],
-    "note": "combined_value is SHA-256 over the concatenation of the two covered files in the listed order. Any byte change to a covered file invalidates this fingerprint and requires re-verification even if HEAD is unchanged. Re-fingerprinted 2026-10-09 after DEFECT-1 fix (notebook only; workflow bytes unchanged)."
+    "note": "combined_value is SHA-256 over the concatenation of the two covered files (canonical LF content, matching git blobs) in the listed order. Any byte change to a covered file invalidates this fingerprint. Re-fingerprinted 2026-10-09 after DEFECT-2 fix (workflow switched from legacy POST /api/2.0/files/import-file to current PUT/GET /api/2.0/fs/files + idempotent PUT /api/2.0/fs/directories per https://docs.databricks.com/api/files/v2/file; notebook bytes unchanged from a163bf82)."
   },
   "synthetic_fixture": {
     "description": "51-byte UTF-8 payload: 'frontier-ai-observatory task-02 synthetic smoke v1' plus trailing LF",
@@ -50,7 +50,8 @@
     "phase": "RUNTIME_PENDING",
     "document": "docs/phase-2/implementation-evidence/task-02-verification.md",
     "counts": { "pass": 12, "fail": 1, "blocked": 7, "na": 3, "accepted": 0, "note": "original independent pass; after DEFECT-1 fix + addendum re-verify: pass 13, fail 0, blocked 7, na 3, accepted 0" },
-    "cloud_runs_observed": 0,
+    "cloud_runs_observed": 2,
+    "cloud_runs_note": "runs 37966987073 (pre-fix; input validation fail on DATABRICKS_HOST shape, human fixed secret) and 37967657832 (pre-fix; HTTP 404 on legacy endpoint, step 4, after validation+synthetic PASS). Both against f4a3eacd; neither uploaded any volume object. Next dispatch awaits fixed-workflow commit+push+merge.",
     "runner_sha_bound": false,
     "findings": [
       {
@@ -59,7 +60,14 @@
         "line": 232,
         "summary": "summary field merge_first_inserted used op_metrics[-1]; history(2) is newest-first so [-1] was the creation/prior version and the field misreported (0 or stale). MERGE_METRICS/EXACT_REPLAY authoritative prints were unaffected.",
         "disposition": "fixed-2026-10-09-awaiting-commit",
-        "fix": "first-merge row selected by version (version_before + 1) with exactly-one guard; summary reads first_merge_metrics[0]; added merge_first_updated field; local re-verify: ast.parse OK, structure 13/13, no op_metrics[-1] residual, privacy CLEAN; notebook sha a163bf82..., combined fingerprint be655643..."
+        "fix": "first-merge row selected by version (version_before + 1) with exactly-one guard; summary reads first_merge_metrics[0]; added merge_first_updated field; local re-verify: ast.parse OK, structure 13/13, no op_metrics[-1] residual, privacy CLEAN; notebook sha a163bf82..., combined fingerprint b3ccc5d6..."
+      },
+      {
+        "id": "DEFECT-2",
+        "file": ".github/workflows/smoke-workspace-readiness.yml",
+        "summary": "Workflow used legacy endpoint family POST /api/2.0/files/import-file (multipart) which no longer exists; first real dispatch (run 37967657832) failed at step 4 with bare HTTP 404 on STARTED upload after input validation and synthetic generation passed. Notebook unaffected (it reads via filesystem inside Databricks, not REST).",
+        "disposition": "fixed-2026-10-09-awaiting-commit",
+        "fix": "switched all transfers to current Files API per https://docs.databricks.com/api/files/v2/file: idempotent PUT /api/2.0/fs/directories for events+artifacts parents; uploads PUT /api/2.0/fs/files{path} raw-bytes octet-stream; downloads GET /api/2.0/fs/files{path}; artifact and both idempotency uploads send overwrite=false (overwrite=true never sent); per-run STARTED/READY unique paths keep default. Legacy import-file/files-download refs: 0. Guards 13/13 + endpoint guards pass; YAML parses; workflow sha 04bc176a..., notebook sha unchanged a163bf82..."
       },
       {
         "id": "RECORD-1",

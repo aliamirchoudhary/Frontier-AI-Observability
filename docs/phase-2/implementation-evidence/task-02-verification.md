@@ -71,6 +71,34 @@ Human instruction: "Do what you think would be appropriate for it." → DEFECT-1
 
 **Post-fix counts:** PASS 13 · FAIL 0 · BLOCKED 7 (items 1, 3, 4, 5, 6, 16-runtime, 21) · N/A 3 · **ACCEPTED 0** — overall remains `RUNTIME_PENDING` until authorized commit+push, dispatch evidence, notebook run, and human edition/billing evidence. Instructor acceptance of the Actions source-call route remains pending independently.
 
+## Post-fix addendum 2 (2026-10-09, same day, human-directed fix — no Git writes)
+
+Human instruction: "Fix workflow." → DEFECT-2 fixed after runtime discovery.
+
+**Runtime discovery:** first real dispatches of the merged workflow on `main`:
+- Run `37966987073` failed at input validation: `DATABRICKS_HOST` shape invalid (human fixed the secret value — accepted shape `https://<host>` only).
+- Run `37967657832` (after secret fix): steps 2–3 PASS (validation + 51-byte synthetic hash verified on runner); step 4 STARTED upload **HTTP 404** with empty body on first cloud call. Bare gateway 404 = endpoint path not found.
+
+**Root cause:** workflow used the legacy endpoint family `POST /api/2.0/files/import-file` (multipart). The current Databricks Files API (https://docs.databricks.com/api/files/v2/file) exposes `/api/2.0/fs/files{path}` (GET/PUT/DELETE/HEAD) and `/api/2.0/fs/directories{path}` — the legacy routes no longer exist.
+
+**Fix applied** (workflow only; notebook untouched — it reads via the Databricks filesystem inside the session, not REST):
+- Idempotent `PUT /api/2.0/fs/directories{path}` for `…/events` and `…/artifacts` parents before uploads.
+- All uploads: `PUT /api/2.0/fs/files{path}` with raw-bytes `Content-Type: application/octet-stream` (replaces multipart `-F file=@`).
+- All downloads: `GET /api/2.0/fs/files{path}` (replaces `files/download?file_path=`).
+- No-overwrite semantics preserved: artifact upload and both idempotency-sub-test uploads send `?overwrite=false`; `overwrite=true` is never sent (3 comment lines mention it only to state it is never sent; zero non-comment occurrences). Per-run unique STARTED/READY event paths keep default overwrite (safe; distinct per run/attempt).
+- Legacy references remaining: `import-file` 0, `files/download` 0.
+
+**Re-verification of the fix (local, this session):**
+- YAML parses (`yaml.safe_load`): name, dispatch-only trigger, permissions, 6 steps.
+- Guard battery 13/13 PASS (original 11 + `fs-files-endpoint`, `fs-directories-endpoint`, `no-legacy-endpoint`; `no-overwrite-true` PASS after comment-only audit).
+- Notebook diff vs HEAD = 0 lines; committed notebook blob sha `a163bf82…` unchanged (CRLF working-copy noise neutralized by canonical LF comparison; `core.autocrlf=true` noted).
+- Canonical fingerprint recomputed over LF content: workflow 12,691 B / `04bc176a…`; notebook 12,694 B / `a163bf82…`; **combined `b3ccc5d653d61b370d6e1c9f07e27621a3104b0ddd0a05ece1fbe69e49051387` (25,385 B)** — written to `task-02-state.json`; earlier fingerprints superseded.
+- Privacy scan: CLEAN (no secret values; host/token redaction intact).
+
+**Dispatch history (integrity record):** run `37966987073` (pre-fix, validation fail — secret shape) and run `37967657832` (pre-fix, endpoint 404) both against the pre-fix commit `f4a3eacd`. Neither uploaded any object to the volume (first attempt never reached a live endpoint; second failed before any 2xx). No cleanup required. One dispatch of the fixed workflow is authorized to follow after commit+push+merge.
+
+**Post-fix counts:** PASS 13 · FAIL 0 · BLOCKED 7 (items 1, 3, 4, 5, 6, 16-runtime, 21 — runtime evidence still pending the fixed-workflow dispatch) · N/A 3 · ACCEPTED 0 — overall remains `RUNTIME_PENDING`.
+
 ## Not claimed
 
 No cloud execution, no transfer success, no import-route result, no billing verification, no human peer approval, no instructor acceptance — this file is agent technical verification only.
