@@ -54,6 +54,23 @@ The proposed pipeline brings public data into an Apache Spark lakehouse. Bronze 
 
 Sizes use decimal MB and refer to original source formats. CooperBench archives are counted compressed. Representative full-load samples do not measure the complete baseline. The native incremental files are unchanged source Parquet, with chronology and checksums recorded in the [manifest](data/samples/manifest.json).
 
+## Phase 2 — Bronze and Silver
+
+**Status: implementation specification reviewed; implementation not started.** The [Phase 2 pack](docs/phase-2/README.md) defines the required behavior. No cloud pipeline, source download or workflow run has been executed, and every item in the [submission evidence checklist](docs/phase-2/submission-evidence.md) remains open.
+
+**Selected acquisition route:** source requests run on a GitHub Actions runner, original bytes upload through the verified Files API into a restricted Databricks staging volume, and all Spark parsing, Bronze/Silver transforms and backfills run in Databricks Free Edition. This differs from the original Databricks-only source-call requirement; **instructor acceptance is pending**, and the technical route (Task 02 authentication/tiny transfer, then Task 03 acquisition) is untested. Technical and requirement acceptance are reported separately.
+
+| Resource | Contents |
+| :--- | :--- |
+| [Implementation documentation](docs/phase-2/README.md) | Scope, ingestion, pipeline behavior, audit and recovery |
+| [Data dictionaries](docs/phase-2/data-models.md) | Proposed grains, columns, keys and timestamps |
+| [Execution guide](docs/phase-2/execution-guide.md) | Parameter contract and planned execution sequence |
+| [Verification plan](docs/phase-2/verification.md) | Acceptance tests |
+| [Submission evidence](docs/phase-2/submission-evidence.md) | Open evidence checklist |
+| [Repository readiness](docs/phase-2/repository-readiness.md) | Task 01 local readiness record and dependency plan |
+
+`src/`, `notebooks/` and `.github/workflows/` hold **PLANNED** skeletons only. They contain no working collector, contract, transform or notebook logic, and they download nothing.
+
 ## Questions worth answering
 
 - Which eligible models offer a better score and lower estimated cost for a selected workload?
@@ -200,11 +217,15 @@ These are future goals, not available features. Commercial use would require rep
 | `data/samples/manifest.json` | Source sizes, revisions, selections and checksums |
 | `tools/verify_samples.py` | Local sample and chronology verification |
 | `docs/` | Architecture, source guide, Free Edition plan and replacement instructions |
+| `docs/phase-2/` | Bronze/Silver implementation specification and repository readiness record |
+| `src/` | PLANNED collector, contract and transform modules (skeleton only) |
+| `notebooks/` | PLANNED thin Databricks notebooks (skeleton only, never executed) |
+| `.github/workflows/` | PLANNED Actions acquisition workflow (dispatch-only placeholder) |
 | `assets/observatory-banner.svg` | Repository artwork |
 | `.gitignore` · `requirements.txt` | Local exclusions and sample-verifier dependency |
 | `LICENSE` · `THIRD_PARTY_NOTICES.md` | Code licence and upstream data notices |
 
-Future `src/`, `notebooks/`, `sql/`, `dashboards/`, `research/` and workflow folders will be added with their implementations. They are not represented as working components in this package.
+`src/`, `notebooks/` and `.github/workflows/` currently contain labeled PLANNED skeletons; they are not working components and no path in this repository is represented as a deployed cloud component. `sql/`, `dashboards/` and `research/` are not present and will be added with their implementations.
 
 ## Verify the foundation
 
