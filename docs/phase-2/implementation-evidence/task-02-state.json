@@ -30,6 +30,13 @@
       }
     ],
     "note": "combined_value is SHA-256 over the concatenation of the two covered files (canonical LF content, matching git blobs) in the listed order. Any byte change to a covered file invalidates this fingerprint. Re-fingerprinted 2026-10-09 after DEFECT-5 fix (merge target DeltaTable aliased as 't' to match merge condition prefix; human-fixed at runtime, ported from executed export; workflow unchanged 04bc176a). notebooks/workspace_readiness.ipynb is the Databricks export of the executed notebook (code cells byte-identical to this .py, verified by diff; contains run outputs as evidence) — not a separate fingerprint target.",
+    "bound_commit": {
+      "sha": "a41c963c9569a68a12e14a830ba4b4abf66e8994",
+      "short": "a41c963",
+      "branch": "main",
+      "verified": "committed blobs at this SHA re-hashed after commit: notebook d2609113 (13,089 B), workflow 04bc176a (12,691 B), combined 8e89f257 (25,780 B) — exact match to this record",
+      "pushed": "2026-10-09, origin/main fast-forward 9a09b3c..a41c963"
+    },
     "superseded": ["9a8ddf73... (pre-DEFECT-1)", "be655643... (post-DEFECT-1)", "b3ccc5d6... (post-DEFECT-2)", "fedb98aa... (post-DEFECT-3)", "0262c910... (post-DEFECT-4; value recorded in run output code_sha)"]
   },
   "synthetic_fixture": {
